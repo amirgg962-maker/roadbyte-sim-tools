@@ -1,0 +1,107 @@
+name: Release
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  create-release:
+    runs-on: ubuntu-latest
+    outputs:
+      release_body: ${{ steps.notes.outputs.body }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Generate changelog entry
+        id: notes
+        run: |
+          TAG="${GITHUB_REF_NAME}"
+          VERSION="${TAG#v}"
+          awk "BEGIN{flag=0} /^## roadbyte-sim-tools@${VERSION}/{flag=1; next} /^## roadbyte-sim-tools@/{if(flag) exit} /^# Changelog/{if(flag) exit} flag" CHANGELOG.md | sed '/./,$!d' > release-notes-temp.md
+          if [ ! -s release-notes-temp.md ]; then
+            echo "No changelog entry found for ${TAG}, creating empty notes"
+            echo "Release ${TAG}" > release-notes-temp.md
+          fi
+          {
+            echo 'body<<ROADBYTE_RELEASE_NOTES_EOF'
+            cat release-notes-temp.md
+            echo 'ROADBYTE_RELEASE_NOTES_EOF'
+          } >> "$GITHUB_OUTPUT"
+      - name: Create Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="${GITHUB_REF_NAME}"
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "Release already exists, skipping creation"
+          else
+            gh release create "$TAG" \
+              --title "$TAG" \
+              --notes-file release-notes-temp.md \
+              --verify-tag
+          fi
+
+  build:
+    needs: [create-release]
+    name: tauri-bundle (${{ matrix.target }})
+    strategy:
+      fail-fast: false
+      max-parallel: 1
+      matrix:
+        include:
+          - target: x86_64-unknown-linux-gnu
+            os: ubuntu-latest
+          - target: x86_64-apple-darwin
+            os: macos-latest
+          - target: aarch64-apple-darwin
+            os: macos-latest
+          - target: x86_64-pc-windows-msvc
+            os: windows-latest
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          submodules: recursive
+
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+      - run: pnpm install --frozen-lockfile
+
+      - name: Install Tauri system dependencies (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev \
+            libappindicator3-dev \
+            librsvg2-dev \
+            patchelf \
+            libssl-dev \
+            libxdo-dev
+
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Install Rust target (macOS x86_64)
+        if: matrix.target == 'x86_64-apple-darwin'
+        run: rustup target add x86_64-apple-darwin
+
+      - name: Build, sign, and publish Tauri bundles
+        uses: tauri-apps/tauri-action@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+        with:
+          tagName: ${{ github.ref_name }}
+          releaseName: ${{ github.ref_name }}
+          releaseBody: ${{ needs.create-release.outputs.release_body }}
+          releaseDraft: false
+          projectPath: apps/desktop
+          tauriScript: pnpm tauri
+          args: --target ${{ matrix.target }}
+          uploadUpdaterJson: true

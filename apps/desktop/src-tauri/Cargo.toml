@@ -1,0 +1,86 @@
+[package]
+name = "roadbyte-sim-tools"
+version = "0.3.0"
+edition = "2021"
+description = "Roadbyte Sim Tools - ETS2 save and configuration editor"
+
+[lib]
+name = "roadbyte_sim_tools_lib"
+crate-type = ["lib", "cdylib", "staticlib"]
+
+[lints.rust]
+unsafe_code = "deny"
+dead_code = "warn"
+
+[lints.clippy]
+# Restriction - prevent panics and debug leftovers
+unwrap_used = "warn"
+expect_used = "warn"
+todo = "warn"
+dbg_macro = "warn"
+print_stdout = "warn"
+print_stderr = "warn"
+
+# Style
+use_self = "warn"
+needless_return = "warn"
+redundant_closure = "warn"
+single_match = "warn"
+bool_to_int_with_if = "warn"
+map_unwrap_or = "warn"
+redundant_else = "warn"
+unnecessary_join = "warn"
+match_same_arms = "warn"
+
+# Correctness
+cast_lossless = "warn"
+large_enum_variant = "warn"
+result_large_err = "warn"
+wildcard_enum_match_arm = "warn"
+manual_assert = "warn"
+
+# Noisy ones - allow explicitly
+similar_names = "allow"
+module_name_repetitions = "allow"
+too_many_arguments = "allow"
+too_many_lines = "allow"
+type_complexity = "allow"
+cast_possible_truncation = "allow"
+cast_sign_loss = "allow"
+cast_possible_wrap = "allow"
+doc_markdown = "allow"
+must_use_candidate = "allow"
+return_self_not_must_use = "allow"
+missing_errors_doc = "allow"
+missing_panics_doc = "allow"
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+tauri-plugin-opener = "2"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+thiserror = "2"
+anyhow = "1"
+chrono = "0.4"
+dirs = "6"
+hex = "0.4"
+aes = "0.9"
+cbc = "0.2"
+cipher = "0.5"
+flate2 = "1.1"
+hmac = "0.13"
+sha2 = "0.11"
+getrandom = "0.2"
+regex = "1"
+tempfile = "3"
+tauri-plugin-store = "2"
+tauri-plugin-dialog = "2"
+tauri-plugin-updater = "2"
+tauri-plugin-process = "2"
+
+[dev-dependencies]
+pretty_assertions = "1"
+rstest = "0.24"

@@ -1,0 +1,69 @@
+# Dependencies
+node_modules
+node_modules-*/
+.pnpm-store/
+.vite-plus/
+.pnp
+.pnp.js
+
+# Build outputs
+dist
+build
+*.tsbuildinfo
+
+# Generated files
+apps/web/src/routeTree.gen.ts
+
+# Environment variables
+.env
+.env*.local
+
+# IDEs and editors
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+.idea
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+.pnpm-debug.log*
+
+# Turbo
+.turbo
+.nx
+
+# Better-T-Stack
+.alchemy
+.vercel
+
+# Testing
+coverage
+.nyc_output
+
+# Rust
+target/
+*.rs.bk
+
+# Processed release notes
+release-notes/processed/
+
+# Local handoff notes (not product documentation)
+BACKUP-CENTER-FINALIZATION-FA.md
+ROADBYTE-START-FA.md
+
+# Misc
+*.tgz
+.cache
+tmp
+temp

@@ -1,0 +1,3 @@
+{
+  "extends": "@roadbyte-sim-tools/config/tsconfig.base.json"
+}

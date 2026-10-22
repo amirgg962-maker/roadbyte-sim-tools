@@ -54,4 +54,3 @@ A packaged installer should only be published after building and testing it on t
 ## Contributing
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for development conventions and testing guidance. Before redistribution, keep the license and copyright notices included in `LICENSE` intact.
-

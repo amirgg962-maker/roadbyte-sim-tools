@@ -1,0 +1,46 @@
+{
+  "name": "roadbyte-sim-tools",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "type": "module",
+  "scripts": {
+    "dev": "pnpm --filter @roadbyte-sim-tools/desktop dev",
+    "build": "pnpm --filter @roadbyte-sim-tools/desktop build",
+    "check-types": "pnpm --filter @roadbyte-sim-tools/desktop check-types",
+    "check": "oxlint && oxfmt --write",
+    "lint": "vp lint",
+    "format": "vp fmt",
+    "staged": "vp staged",
+    "prepare": "node scripts/install-githooks.mjs",
+    "generate-icon": "node scripts/generate-icon.mts",
+    "bump": "node scripts/bump.mts",
+    "tag": "node scripts/tag.mts",
+    "cargo:check": "cargo check --workspace",
+    "cargo:fmt": "cargo fmt --all --check",
+    "cargo:clippy": "cargo clippy --workspace --all-targets -- -D warnings",
+    "cargo:build": "cargo build --workspace",
+    "tauri": "pnpm --filter @roadbyte-sim-tools/desktop tauri",
+    "prepush": "pnpm --filter @roadbyte-sim-tools/desktop check-types && cargo clippy --workspace --all-targets -- -D warnings && cargo fmt --all --check && cargo test --workspace --all-targets --all-features --locked"
+  },
+  "dependencies": {
+    "dotenv": "^17.4.2",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@roadbyte-sim-tools/config": "workspace:*",
+    "@types/node": "^22.13.14",
+    "lint-staged": "^17.0.7",
+    "oxfmt": "^0.57.0",
+    "oxlint": "^1.72.0",
+    "rolldown": "1.1.4",
+    "typescript": "^7.0.2",
+    "vite-plus": "0.2.2"
+  },
+  "overrides": {
+    "vite": "npm:@voidzero-dev/vite-plus-core@0.2.2"
+  },
+  "packageManager": "pnpm@11.11.0"
+}
