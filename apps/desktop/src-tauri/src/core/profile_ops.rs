@@ -338,6 +338,16 @@ mod tests {
     use super::*;
     use std::fs;
 
+    #[cfg(unix)]
+    fn create_file_symlink(target: &Path, link: &Path) -> std::io::Result<()> {
+        std::os::unix::fs::symlink(target, link)
+    }
+
+    #[cfg(windows)]
+    fn create_file_symlink(target: &Path, link: &Path) -> std::io::Result<()> {
+        std::os::windows::fs::symlink_file(target, link)
+    }
+
     #[test]
     fn test_is_valid_save_name_valid() {
         assert!(is_valid_save_name("autosave"));
@@ -385,7 +395,7 @@ mod tests {
         fs::write(profile.join("profile.sii"), "profile").unwrap();
         let outside = directory.path().join("outside.txt");
         fs::write(&outside, "outside").unwrap();
-        if std::os::windows::fs::symlink_file(&outside, profile.join("linked.txt")).is_err() {
+        if create_file_symlink(&outside, &profile.join("linked.txt")).is_err() {
             return;
         }
 

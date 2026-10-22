@@ -796,6 +796,16 @@ mod tests {
     use super::*;
     use std::fs;
 
+    #[cfg(unix)]
+    fn create_directory_symlink(target: &Path, link: &Path) -> std::io::Result<()> {
+        std::os::unix::fs::symlink(target, link)
+    }
+
+    #[cfg(windows)]
+    fn create_directory_symlink(target: &Path, link: &Path) -> std::io::Result<()> {
+        std::os::windows::fs::symlink_dir(target, link)
+    }
+
     #[test]
     fn test_backup_center_rejects_symlinked_backup_root() {
         let directory = tempfile::tempdir().unwrap();
@@ -804,7 +814,7 @@ mod tests {
         fs::create_dir_all(&actual_root).unwrap();
         fs::create_dir_all(&profile).unwrap();
         let symlink_root = profile.join("roadbyte-backups");
-        if std::os::windows::fs::symlink_dir(&actual_root, &symlink_root).is_err() {
+        if create_directory_symlink(&actual_root, &symlink_root).is_err() {
             return;
         }
 
