@@ -41,7 +41,8 @@ jobs:
             gh release create "$TAG" \
               --title "$TAG" \
               --notes-file release-notes-temp.md \
-              --verify-tag
+              --verify-tag \
+              --draft
           fi
 
   build:
@@ -100,8 +101,19 @@ jobs:
           tagName: ${{ github.ref_name }}
           releaseName: ${{ github.ref_name }}
           releaseBody: ${{ needs.create-release.outputs.release_body }}
-          releaseDraft: false
+          releaseDraft: true
           projectPath: apps/desktop
           tauriScript: pnpm tauri
           args: --target ${{ matrix.target }}
           uploadUpdaterJson: true
+
+  publish:
+    needs: [build]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Publish release after every platform bundle succeeds
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release edit "${GITHUB_REF_NAME}" --draft=false

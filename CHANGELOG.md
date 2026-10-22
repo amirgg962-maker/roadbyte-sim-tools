@@ -1,6 +1,6 @@
 # Changelog
 
-## roadbyte-sim-tools@0.3.0 (2026-10-21)
+## roadbyte-sim-tools@0.1.0 (2026-10-23)
 
 ### Roadbyte identity and branding
 
@@ -12,5 +12,6 @@
 
 ### Validation status
 
-- Source structure and branding references reviewed.
-- A full application build and runtime validation are still pending.
+- Local TypeScript checks, Rust formatting, Clippy, and all Rust tests pass.
+- Windows MSI and NSIS installers build locally, with updater signatures matching the configured public key.
+- The local signed updater trial downloaded and installed a newer package. The production GitHub Release feed still needs verification after publication.
