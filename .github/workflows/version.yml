@@ -28,11 +28,14 @@ jobs:
           fi
 
       - uses: pnpm/action-setup@v4
+        if: steps.check.outputs.has_notes == 'true'
       - uses: actions/setup-node@v4
+        if: steps.check.outputs.has_notes == 'true'
         with:
           node-version: "24"
 
       - name: Install Tauri system dependencies
+        if: steps.check.outputs.has_notes == 'true'
         run: |
           sudo apt-get update
           sudo apt-get install -y \
@@ -40,6 +43,7 @@ jobs:
             libglib2.0-dev
 
       - run: pnpm install --frozen-lockfile
+        if: steps.check.outputs.has_notes == 'true'
 
       - name: Bump versions
         if: steps.check.outputs.has_notes == 'true'
