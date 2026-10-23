@@ -168,17 +168,17 @@ let output = doc.to_string();
 ```bash
 cargo test --workspace --all-features --locked
 pnpm check-types
-pnpm check
+pnpm lint
 pnpm prepush
 ```
 
-The Rust test suite includes golden-file integration tests in `src-tauri/tests/` that auto-bootstrap missing golden files on the first run.
+`pnpm check` also formats JavaScript and TypeScript files in place, so it may rewrite files. The Rust test suite includes golden-file integration tests under `apps/desktop/src-tauri/tests/`; review generated fixture changes before committing.
 
 ## Project conventions
 
 - **TypeScript**: `verbatimModuleSyntax` is on — always use `import type` for type-only imports.
 - **Rust**: Clippy lints are strict (`unwrap_used`, `expect_used`, `todo`, `dbg_macro`, `print_stdout`, `print_stderr` all warn). Tests have relaxed rules via `.clippy.toml`.
-- **Iteration order**: `cargo check` → `pnpm check-types` → `pnpm check` → `cargo test`.
+- **Local validation**: `pnpm prepush` runs type checks, lint, Rust formatting, Clippy, and the Rust test suite.
 - **Path aliases**: `@/*` → `apps/desktop/src/*`, `@ui/*` → `packages/ui/src/*`.
 - **Package manager**: pnpm only. The catalog in `pnpm-workspace.yaml` pins shared dependencies.
 
@@ -189,4 +189,8 @@ The Rust test suite includes golden-file integration tests in `src-tauri/tests/`
 3. Run `pnpm prepush` (checks types, lints, formats, and runs tests).
 4. Open a pull request.
 
-Bug reports and feature requests should be filed in the Roadbyte Sim Tools repository Issues section once its public repository is available.
+## Bug reports and feature requests
+
+Use the [issue form](https://github.com/amirgg962-maker/roadbyte-sim-tools/issues/new/choose) to report a reproducible bug or suggest an improvement. Include the app version, operating system, steps to reproduce, and the result you expected. Remove personal information from logs and paths. **Do not attach real ETS2 profile or save files**; they can contain personal or account-related data. If a safe, minimal example is needed, create a copy with fictional data.
+
+For code changes, open a [pull request](https://github.com/amirgg962-maker/roadbyte-sim-tools/compare) and describe the user-visible effect, the checks you ran, and any limitations that remain. Add or update tests when behavior changes.

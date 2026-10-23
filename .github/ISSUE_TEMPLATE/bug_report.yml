@@ -1,0 +1,55 @@
+name: Bug report
+description: Report a reproducible problem in Roadbyte Sim Tools.
+title: "[Bug]: "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Please search existing issues first. Never attach real game profiles or save files; use fictional or redacted examples only.
+  - type: input
+    id: version
+    attributes:
+      label: App version
+      description: The version shown in the app or installer.
+      placeholder: 0.1.1
+    validations:
+      required: true
+  - type: input
+    id: os
+    attributes:
+      label: Operating system
+      description: Include the OS version and processor architecture if known.
+      placeholder: Windows 11, x64
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: List the actions that trigger the problem. Remove personal paths and account details.
+      placeholder: |
+        1. Open...
+        2. Select...
+        3. See the error...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant error text or logs
+      description: Remove usernames, private paths, profile names, and other personal information. Do not upload save files.
+      render: text
+    validations:
+      required: false

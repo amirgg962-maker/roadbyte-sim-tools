@@ -2,17 +2,15 @@
 
 ## roadbyte-sim-tools@0.1.1 (2026-10-23)
 
-### Roadbyte identity and branding
+### Highlights
 
-- Established the Roadbyte Sim Tools product name and desktop application identity.
-- Applied the charcoal-black and soft neon-orange branding direction.
-- Updated the About panel with creator credit: Amircore (@TGT_AM).
-- Removed previous-product links and stale demo screenshots from the public-facing documentation.
-- Updated workspace, Rust crate, and build metadata to use Roadbyte naming where appropriate.
+- Published signed installers for Windows, macOS, and Linux.
+- Added the Roadbyte Sim Tools product identity, application branding, and creator credit.
+- Updated public documentation and project metadata for the Roadbyte release.
+- Included signed updater artifacts with the release.
 
-### Validation status
+### Verification
 
-- Local TypeScript checks, Rust formatting, Clippy, and all Rust tests pass.
-- Windows MSI and NSIS installers build locally, with updater signatures matching the configured public key.
-- Rotated the updater signing key after the first GitHub Actions run exposed a key mismatch.
-- The local signed updater trial downloaded and installed a newer package. The production GitHub Release feed still needs verification after publication.
+- The v0.1.1 CI workflow passed TypeScript checks, Rust formatting, Clippy, and Rust tests.
+- The release workflow successfully built the Windows, macOS, and Linux bundles.
+- The in-app update flow has not yet been verified end to end against the public release feed; use the Releases page to install updates until that verification is complete.

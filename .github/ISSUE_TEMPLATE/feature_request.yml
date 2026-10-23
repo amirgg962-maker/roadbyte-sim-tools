@@ -1,0 +1,32 @@
+name: Feature request
+description: Suggest a focused improvement or new capability.
+title: "[Feature]: "
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem or use case
+      description: What are you trying to do, and what is difficult today?
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: Proposed solution
+      description: Describe the behavior you would like to see.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Any other approaches you considered.
+    validations:
+      required: false
+  - type: checkboxes
+    id: safety
+    attributes:
+      label: Save-file safety
+      options:
+        - label: This request does not require sharing real game saves, profiles, or personal data.
+          required: true

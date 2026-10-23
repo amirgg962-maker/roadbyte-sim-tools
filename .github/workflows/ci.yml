@@ -21,6 +21,7 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm check-types
+      - run: pnpm lint
 
   rust:
     runs-on: ubuntu-latest

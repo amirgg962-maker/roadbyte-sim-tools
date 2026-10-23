@@ -23,7 +23,7 @@
     "cargo:clippy": "cargo clippy --workspace --all-targets -- -D warnings",
     "cargo:build": "cargo build --workspace",
     "tauri": "pnpm --filter @roadbyte-sim-tools/desktop tauri",
-    "prepush": "pnpm --filter @roadbyte-sim-tools/desktop check-types && cargo clippy --workspace --all-targets -- -D warnings && cargo fmt --all --check && cargo test --workspace --all-targets --all-features --locked"
+    "prepush": "pnpm --filter @roadbyte-sim-tools/desktop check-types && pnpm lint && cargo clippy --workspace --all-targets -- -D warnings && cargo fmt --all --check && cargo test --workspace --all-targets --all-features --locked"
   },
   "dependencies": {
     "dotenv": "^17.4.2",
