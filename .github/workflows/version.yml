@@ -9,14 +9,14 @@ concurrency:
 
 jobs:
   manage:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: write
       pull-requests: write
     outputs:
       has_notes: ${{ steps.check.outputs.has_notes }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
@@ -29,9 +29,9 @@ jobs:
             echo "has_notes=false" >> $GITHUB_OUTPUT
           fi
 
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@v6
         if: steps.check.outputs.has_notes == 'true'
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         if: steps.check.outputs.has_notes == 'true'
         with:
           node-version: "24"
