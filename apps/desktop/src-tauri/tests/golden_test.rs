@@ -16,6 +16,10 @@ fn read_input() -> String {
     fs::read_to_string(editor_dir().join("input.sii")).unwrap()
 }
 
+fn has_sii_header(content: &str) -> bool {
+    content.starts_with("SiiNunit\n{") || content.starts_with("SiiNunit\r\n{")
+}
+
 /// Load a golden file. If it doesn't exist, write `content` to it and return `content`.
 /// This allows bootstrapping golden files on the first run.
 fn golden_or_bootstrap(name: &str, content: &str) -> String {
@@ -280,7 +284,7 @@ fn golden_structural_integrity() {
 
     // Verify SiiNunit wrapper is intact
     assert!(
-        content.starts_with("SiiNunit\n{"),
+        has_sii_header(content),
         "Document should start with SiiNunit header"
     );
     assert!(
@@ -359,7 +363,7 @@ fn golden_no_data_loss() {
     );
 
     // SiiNunit wrapper intact
-    assert!(edited.starts_with("SiiNunit\n{"), "Header corrupted");
+    assert!(has_sii_header(edited), "Header corrupted");
     assert!(edited.trim_end().ends_with('}'), "Footer corrupted");
 
     // All non-edited property lines should still be present byte-identical

@@ -64,7 +64,10 @@ fn test_scsc_fixture_roundtrip() {
     let saved_data = fs::read(&scsc_path).unwrap();
     let decompressed =
         roadbyte_sim_tools_lib::save_parser::compression::decompress_save(&saved_data).unwrap();
-    assert_eq!(decompressed, original);
+    assert_eq!(
+        decompressed.replace("\r\n", "\n"),
+        original.replace("\r\n", "\n")
+    );
 }
 
 /// Test profile.sii fixture

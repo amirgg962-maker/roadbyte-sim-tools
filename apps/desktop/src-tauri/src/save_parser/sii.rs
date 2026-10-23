@@ -112,6 +112,11 @@ impl SiiDocument {
     }
 
     fn insert_property(&mut self, name: &str, value: &str) {
+        let newline = if self.content.contains("\r\n") {
+            "\r\n"
+        } else {
+            "\n"
+        };
         let base_name = name.split_once('[').map_or(name, |(base, _)| base);
         let property_pattern = format!(r"(?m)^\s*{}(?:\[\d+\])?\s*:", regex::escape(base_name));
         let property_re = Regex::new(&property_pattern).ok();
@@ -128,9 +133,9 @@ impl SiiDocument {
         let separator = if insertion_point == 0 || self.content[..insertion_point].ends_with('\n') {
             ""
         } else {
-            "\n"
+            newline
         };
-        let insertion = format!("{separator} {name}: {value}\n");
+        let insertion = format!("{separator} {name}: {value}{newline}");
         self.content.insert_str(insertion_point, &insertion);
     }
 
@@ -222,6 +227,19 @@ mod tests {
         assert!(changed);
         assert_eq!(doc.get_array_property_count("cities"), 2);
         assert_eq!(doc.get_array_property("cities").unwrap()[0], "\"a\"");
+    }
+
+    #[test]
+    fn test_set_array_property_preserves_crlf_line_endings() {
+        let mut doc = make_doc("SiiNunit\r\n{\r\n cities: 0\r\n}\r\n");
+        let items = vec!["\"berlin\"".into(), "\"paris\"".into()];
+
+        assert!(doc.set_array_property("cities", &items).unwrap());
+
+        assert_eq!(
+            doc.content(),
+            "SiiNunit\r\n{\r\n cities: 2\r\n cities[0]: \"berlin\"\r\n cities[1]: \"paris\"\r\n}\r\n"
+        );
     }
 
     #[test]
