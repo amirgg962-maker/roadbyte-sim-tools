@@ -1,6 +1,6 @@
 # Changelog
 
-## roadbyte-sim-tools@0.1.0 (2026-10-23)
+## roadbyte-sim-tools@0.1.1 (2026-10-23)
 
 ### Roadbyte identity and branding
 
@@ -14,4 +14,5 @@
 
 - Local TypeScript checks, Rust formatting, Clippy, and all Rust tests pass.
 - Windows MSI and NSIS installers build locally, with updater signatures matching the configured public key.
+- Rotated the updater signing key after the first GitHub Actions run exposed a key mismatch.
 - The local signed updater trial downloaded and installed a newer package. The production GitHub Release feed still needs verification after publication.

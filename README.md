@@ -5,9 +5,9 @@
 
 Roadbyte Sim Tools is a desktop toolkit for Euro Truck Simulator 2. It helps players inspect profiles and save files, edit money and experience points, manage selected save actions, and browse game configuration values through a dark interface with a charcoal-black base, soft neon-orange accents, and subtle abstract lighting.
 
-> Roadbyte Sim Tools v0.1.0. Download signed installers from GitHub Releases. In-app updates are installed only after you choose to download and install them.
+> Roadbyte Sim Tools v0.1.1. Download signed installers from GitHub Releases. In-app updates are installed only after you choose to download and install them.
 
-![Version](https://img.shields.io/badge/version-0.1.0-orange)
+![Version](https://img.shields.io/badge/version-0.1.1-orange)
 ![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20Linux%20%7C%20macOS-lightgrey)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
