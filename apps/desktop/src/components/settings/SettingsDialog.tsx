@@ -171,9 +171,11 @@ export function SettingsDialog({ appInfo }: SettingsDialogProps) {
                   className="pointer-events-none absolute -right-8 -top-10 h-32 w-32 rounded-full bg-primary/10 blur-3xl"
                 />
                 <div className="relative flex items-start gap-3">
-                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-lg shadow-primary/20">
-                    <span className="text-xl font-black tracking-tight">R</span>
-                  </div>
+                  <img
+                    src="/logo.png"
+                    alt="Roadbyte Sim Tools"
+                    className="h-12 w-12 shrink-0 rounded-xl object-cover shadow-lg shadow-primary/20"
+                  />
                   <div className="min-w-0 flex-1 space-y-1">
                     <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-primary">
                       {t("Creator & Brand")}
@@ -182,16 +184,16 @@ export function SettingsDialog({ appInfo }: SettingsDialogProps) {
                       Roadbyte Sim Tools
                     </h5>
                     <p className="font-semibold text-foreground">
-                      Roadbyte edition by Amircore <span className="text-primary">(@TGT_AM)</span>
+                      {t("Created and maintained by Amir")}
                     </p>
                     <p className="text-xs leading-relaxed text-muted-foreground">
-                      {t("Branding, visual redesign, and customization by Amircore (@TGT_AM).")}
+                      {t("An independent toolkit for Euro Truck Simulator 2.")}
                     </p>
                   </div>
                 </div>
                 <div className="relative mt-4 flex flex-wrap items-center gap-2 border-t border-primary/15 pt-3 text-[11px]">
                   <span className="rounded-full border border-primary/25 bg-primary/10 px-2.5 py-1 font-medium text-foreground">
-                    Creator · @TGT_AM
+                    {t("Independent project")}
                   </span>
                 </div>
               </div>

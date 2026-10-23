@@ -43,7 +43,7 @@ import { isSteamSynced } from "../../utils/steam";
 import { basename } from "../../utils/path";
 import { translate } from "../../i18n";
 
-const logoSrc = "/logo.svg";
+const logoSrc = "/logo.png";
 
 interface AppVersionInfo {
   app_version: string;

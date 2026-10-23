@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useRef } from "react";
+import { Suspense, lazy, useEffect, useState, useCallback, useRef } from "react";
 import { invoke, isTauri } from "@tauri-apps/api/core";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import {
@@ -16,9 +16,6 @@ import { AppShell } from "./components/AppShell";
 import { SidebarNav } from "./components/sidebar/SidebarNav";
 import { Header } from "./components/Header";
 import { StatusBar } from "./components/StatusBar";
-import { SaveEditorPage } from "./components/save-editor/SaveEditorPage";
-import { ConfigEditorPage } from "./components/config-editor/ConfigEditorPage";
-import { BackupCenterPage } from "./components/backups/BackupCenterPage";
 import { SettingsDialog } from "./components/settings/SettingsDialog";
 import { CommandPalette } from "./components/CommandPalette";
 import { KeyboardShortcutsDialog } from "./components/KeyboardShortcutsDialog";
@@ -27,6 +24,22 @@ import { useSaveEditorStore } from "./stores/save-editor";
 import type { WorkspaceTab } from "./stores/save-editor";
 import type { ProfileInfo, SaveInfo } from "./types";
 import { isSteamSynced } from "./utils/steam";
+
+const SaveEditorPage = lazy(() =>
+  import("./components/save-editor/SaveEditorPage").then((module) => ({
+    default: module.SaveEditorPage,
+  })),
+);
+const ConfigEditorPage = lazy(() =>
+  import("./components/config-editor/ConfigEditorPage").then((module) => ({
+    default: module.ConfigEditorPage,
+  })),
+);
+const BackupCenterPage = lazy(() =>
+  import("./components/backups/BackupCenterPage").then((module) => ({
+    default: module.BackupCenterPage,
+  })),
+);
 
 interface AppVersionInfo {
   app_version: string;
@@ -368,49 +381,51 @@ function App() {
         />
       }
       main={
-        activeWorkspace === "saves" ? (
-          <SaveEditorPage
-            readOnly={readOnly}
-            configPaths={configPaths}
-            customPath={customGamePath || null}
-            onStatusChange={setStatus}
-            onReloadSaves={(selectSaveName) => {
-              if (!selectedProfile) return;
-              if (!selectSaveName) return onSelectProfile(selectedProfile);
-              return invoke<SaveInfo[]>("get_saves", { profilePath: selectedProfile.path }).then(
-                (fetchedSaves) => {
-                  setSaves(fetchedSaves);
-                  const createdCopy = fetchedSaves.find(
-                    (save) => save.save_name.toLowerCase() === selectSaveName.toLowerCase(),
-                  );
-                  if (createdCopy) {
-                    setSaveData(null);
-                    setSelectedSave(createdCopy);
-                  } else {
-                    toast.error(
-                      "The copy was created, but it could not be found in the refreshed profile list.",
+        <Suspense fallback={<div className="h-full" aria-busy="true" />}>
+          {activeWorkspace === "saves" ? (
+            <SaveEditorPage
+              readOnly={readOnly}
+              configPaths={configPaths}
+              customPath={customGamePath || null}
+              onStatusChange={setStatus}
+              onReloadSaves={(selectSaveName) => {
+                if (!selectedProfile) return;
+                if (!selectSaveName) return onSelectProfile(selectedProfile);
+                return invoke<SaveInfo[]>("get_saves", { profilePath: selectedProfile.path }).then(
+                  (fetchedSaves) => {
+                    setSaves(fetchedSaves);
+                    const createdCopy = fetchedSaves.find(
+                      (save) => save.save_name.toLowerCase() === selectSaveName.toLowerCase(),
                     );
-                  }
-                },
-              );
-            }}
-          />
-        ) : activeWorkspace === "config" ? (
-          <ConfigEditorPage
-            readOnly={readOnly}
-            onStatusChange={setStatus}
-            onDirtyStateChange={setHasUnsavedConfigChanges}
-            onSavingStateChange={setIsConfigSaving}
-            selectedConfigPath={selectedConfigPath}
-          />
-        ) : (
-          <BackupCenterPage
-            profilePaths={profiles.map((profile) => profile.path)}
-            customPath={customGamePath || null}
-            readOnly={readOnly}
-            onRefreshProfiles={() => loadProfiles(true)}
-          />
-        )
+                    if (createdCopy) {
+                      setSaveData(null);
+                      setSelectedSave(createdCopy);
+                    } else {
+                      toast.error(
+                        "The copy was created, but it could not be found in the refreshed profile list.",
+                      );
+                    }
+                  },
+                );
+              }}
+            />
+          ) : activeWorkspace === "config" ? (
+            <ConfigEditorPage
+              readOnly={readOnly}
+              onStatusChange={setStatus}
+              onDirtyStateChange={setHasUnsavedConfigChanges}
+              onSavingStateChange={setIsConfigSaving}
+              selectedConfigPath={selectedConfigPath}
+            />
+          ) : (
+            <BackupCenterPage
+              profilePaths={profiles.map((profile) => profile.path)}
+              customPath={customGamePath || null}
+              readOnly={readOnly}
+              onRefreshProfiles={() => loadProfiles(true)}
+            />
+          )}
+        </Suspense>
       }
       status={<StatusBar message={status} />}
     >

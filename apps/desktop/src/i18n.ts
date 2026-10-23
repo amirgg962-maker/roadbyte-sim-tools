@@ -17,8 +17,9 @@ const fa: Record<string, string> = {
   "Game Directory": "مسیر بازی",
   "About Roadbyte Sim Tools": "دربارهٔ Roadbyte Sim Tools",
   "Creator & Brand": "سازنده و برند",
-  "Branding, visual redesign, and customization by Amircore (@TGT_AM).":
-    "هویت بصری، بازطراحی و شخصی‌سازی توسط Amircore (@TGT_AM).",
+  "Created and maintained by Amir": "ساخته و نگهداری‌شده توسط Amir",
+  "An independent toolkit for Euro Truck Simulator 2.": "ابزاری مستقل برای Euro Truck Simulator 2.",
+  "Independent project": "پروژهٔ مستقل",
   "App version": "نسخهٔ برنامه",
   "Tested game version": "نسخهٔ آزمایش‌شدهٔ بازی",
   "Detected game version": "نسخهٔ شناسایی‌شدهٔ بازی",
