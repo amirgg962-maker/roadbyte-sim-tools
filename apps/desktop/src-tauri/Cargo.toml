@@ -1,6 +1,6 @@
 [package]
 name = "roadbyte-sim-tools"
-version = "0.1.2"
+version = "0.1.3"
 edition = "2021"
 description = "Roadbyte Sim Tools - ETS2 save and configuration editor"
 
