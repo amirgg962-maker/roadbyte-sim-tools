@@ -22,6 +22,7 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm check-types
       - run: pnpm lint
+      - run: pnpm test:frontend
 
   rust:
     runs-on: ubuntu-24.04
