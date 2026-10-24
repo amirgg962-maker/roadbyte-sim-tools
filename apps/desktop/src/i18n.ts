@@ -91,8 +91,8 @@ const fa: Record<string, string> = {
   "Comparing…": "در حال مقایسه…",
   "Time Machine · backup → current save": "ماشین زمان · پشتیبان ← ذخیرهٔ فعلی",
   "Close comparison": "بستن مقایسه",
-  "The key career metrics match between this backup and the current save.":
-    "شاخص‌های اصلی بین این پشتیبان و ذخیرهٔ فعلی یکسان‌اند.",
+  "No changes were found among the career metrics available in both saves.":
+    "در شاخص‌های شغلیِ موجود در هر دو سیو تغییری پیدا نشد.",
   "These two files do not contain comparable career metrics.":
     "این دو فایل شاخص‌های قابل‌مقایسه ندارند.",
   "Save Story": "داستان سیو",

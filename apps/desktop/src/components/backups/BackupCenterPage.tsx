@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
+import { join } from "@tauri-apps/api/path";
 import { revealItemInDir } from "@tauri-apps/plugin-opener";
 import type { BackupActionResult, BackupEntry } from "../../types";
 import type { SaveData } from "../../types";
@@ -172,11 +173,14 @@ export function BackupCenterPage({
     if (backup.backupType !== "save" || comparingPath) return;
     setComparingPath(backup.path);
     setTimelineCompare({ path: backup.path, rows: [] });
-    const joinGameSii = (folder: string) => `${folder.replace(/[\\/]+$/, "")}\\game.sii`;
     try {
       const [oldSave, currentSave] = await Promise.all([
-        invoke<SaveData>("load_save", { gameSiiPath: joinGameSii(backup.path) }),
-        invoke<SaveData>("load_save", { gameSiiPath: joinGameSii(backup.originalPath) }),
+        join(backup.path, "game.sii").then((gameSiiPath) =>
+          invoke<SaveData>("load_save", { gameSiiPath }),
+        ),
+        join(backup.originalPath, "game.sii").then((gameSiiPath) =>
+          invoke<SaveData>("load_save", { gameSiiPath }),
+        ),
       ]);
       const hasComparableData = [
         "money",
@@ -577,7 +581,7 @@ export function BackupCenterPage({
                       ) : (
                         <p className="mt-2 text-xs text-muted-foreground">
                           {t(
-                            "The key career metrics match between this backup and the current save.",
+                            "No changes were found among the career metrics available in both saves.",
                           )}
                         </p>
                       )}
