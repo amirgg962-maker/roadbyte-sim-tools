@@ -35,7 +35,7 @@ Feature availability can depend on the save format and game version. Keep a sepa
 
 macOS and Linux packages are also listed on the release page. Select the package that matches your operating system and processor. `.sig` files are signatures, not applications.
 
-Signed updater files are published with releases. The in-app update flow should be treated as not yet verified end to end against the public feed; use the release page to install updates until that verification is complete.
+Releases include signed updater packages and a public `latest.json` feed. The app can check for updates from **Settings → Software updates**. The current public release artifacts and feed are published; if the in-app update reports an error or the displayed version does not change after restarting, install the latest version manually from the Releases page.
 
 ## Build from source
 
