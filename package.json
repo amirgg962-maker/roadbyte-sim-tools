@@ -10,6 +10,7 @@
     "dev": "pnpm --filter @roadbyte-sim-tools/desktop dev",
     "build": "pnpm --filter @roadbyte-sim-tools/desktop build",
     "check-types": "pnpm --filter @roadbyte-sim-tools/desktop check-types",
+    "test:frontend": "node --test apps/desktop/tests/*.test.mjs",
     "check": "oxlint && oxfmt --write",
     "lint": "vp lint",
     "format": "vp fmt",
