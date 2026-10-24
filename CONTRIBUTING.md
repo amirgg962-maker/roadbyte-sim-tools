@@ -55,11 +55,11 @@ The app follows a **layered architecture**:
 # Install dependencies
 pnpm install
 
-# Start the desktop dev server
-pnpm dev
+# Start the Tauri desktop app in development mode
+pnpm tauri dev
 ```
 
-Both the Vite dev server (port 5173) and the Tauri Rust backend hot-reload. Make a change in either `src/` or `src-tauri/` and it recompiles.
+This starts the Vite dev server (port 5173) and the Tauri Rust backend. `pnpm dev` starts only the Vite frontend; use it when you specifically want to work on the web UI without launching the desktop shell.
 
 ## Code examples
 
