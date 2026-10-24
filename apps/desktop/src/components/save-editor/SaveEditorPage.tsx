@@ -28,6 +28,8 @@ import { getTextSaveReadOnlyMessage } from "./text-save-format-guidance";
 import { getSaveLoadStartState } from "./save-load-state";
 import { recordActivity } from "../../utils/activity-log";
 import { translate } from "../../i18n";
+import { ProWorkbenchPanel } from "./ProWorkbenchPanel";
+import { CareerConstellation } from "./CareerConstellation";
 
 type QuickAction = "unlock" | "maxSkills" | "repair" | "refuel";
 
@@ -70,6 +72,7 @@ export function SaveEditorPage({
 }: SaveEditorPageProps) {
   const setIsSettingsOpen = useSettingsStore((state) => state.setIsSettingsOpen);
   const selectedProfile = useSaveEditorStore((s) => s.selectedProfile);
+  const profiles = useSaveEditorStore((s) => s.profiles);
   const selectedSave = useSaveEditorStore((s) => s.selectedSave);
   const saveData = useSaveEditorStore((s) => s.saveData);
   const moneyInput = useSaveEditorStore((s) => s.moneyInput);
@@ -581,6 +584,18 @@ export function SaveEditorPage({
         onRename={onRename}
         onClone={onClone}
         onDelete={onDelete}
+      />
+
+      <CareerConstellation saveData={saveData} />
+
+      <ProWorkbenchPanel
+        profiles={profiles}
+        selectedSave={selectedSave}
+        saveData={saveData}
+        readOnly={readOnly}
+        moneyInput={moneyInput}
+        xpInput={xpInput}
+        onReload={reloadSave}
       />
 
       <AlertDialog open={editPreviewOpen} onOpenChange={setEditPreviewOpen}>
