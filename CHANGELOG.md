@@ -30,7 +30,7 @@
 
 - The focused CRLF regression test and full Rust test suite passed on the release commit before this version bump.
 - GitHub Actions CI passed for the SII line-ending fix.
-- At the time this version was prepared, its signed installer and production updater feed still needed release-workflow validation; the v0.1.3 release workflow later completed successfully.
+- At the time this v0.1.2 entry was prepared, release-workflow validation for its signed installer and updater feed was still pending.
 
 ## roadbyte-sim-tools@0.1.1 (2026-10-23)
 
