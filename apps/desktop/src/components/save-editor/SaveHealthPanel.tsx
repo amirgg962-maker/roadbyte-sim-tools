@@ -38,13 +38,37 @@ export function SaveHealthPanel({ saveData }: { saveData: SaveData }) {
           <div className="flex flex-wrap items-center justify-between gap-2">
             <h3 id="save-health-title" className="text-sm font-semibold">
               <ClipboardCheck className="me-2 inline h-4 w-4 align-[-3px]" />
-              {t("Save Health Check")}
+              {t("Save Health Radar")}
             </h3>
             <span className="text-xs font-medium">{statusLabel}</span>
           </div>
           <p className="mt-1 text-xs text-muted-foreground">
             {t("Read-only checks based on the data already loaded. No files are changed.")}
           </p>
+          <div className="mt-3 rounded-lg border border-border/40 bg-background/35 p-3">
+            <div className="flex items-center justify-between gap-3 text-xs">
+              <span className="font-medium">{t("Health radar score")}</span>
+              <span className="font-mono font-semibold tabular-nums">{health.score}/100</span>
+            </div>
+            <div
+              className="mt-2 h-2 overflow-hidden rounded-full bg-muted/70"
+              role="meter"
+              aria-label={t("Health radar score")}
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-valuenow={health.score}
+            >
+              <div
+                className="h-full rounded-full bg-gradient-to-r from-amber-500 via-sky-400 to-emerald-400 transition-[width]"
+                style={{ width: `${health.score}%` }}
+              />
+            </div>
+            <p className="mt-2 text-[10px] leading-4 text-muted-foreground">
+              {t(
+                "This score reflects only checks Roadbyte can perform from loaded metadata; it is not a guarantee that the save is safe or uncorrupted.",
+              )}
+            </p>
+          </div>
           <ul className="mt-3 grid gap-2 text-xs sm:grid-cols-3">
             {health.findings.map((finding) => (
               <li

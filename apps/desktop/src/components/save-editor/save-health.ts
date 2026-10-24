@@ -13,6 +13,7 @@ type SaveHealthInput = Pick<
 
 export function evaluateSaveHealth(data: SaveHealthInput): {
   level: HealthLevel;
+  score: number;
   findings: HealthFinding[];
 } {
   const findings: HealthFinding[] = [
@@ -33,5 +34,15 @@ export function evaluateSaveHealth(data: SaveHealthInput): {
       ? "review"
       : "good";
 
-  return { level, findings };
+  const score = Math.max(
+    0,
+    100 -
+      findings.reduce((penalty, finding) => {
+        if (finding.level === "warning") return penalty + 35;
+        if (finding.level === "review") return penalty + 15;
+        return penalty;
+      }, 0),
+  );
+
+  return { level, score, findings };
 }

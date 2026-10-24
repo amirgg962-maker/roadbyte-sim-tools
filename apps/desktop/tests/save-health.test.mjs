@@ -12,6 +12,7 @@ const readableSave = Object.freeze({
 test("fully available save metadata reports no issues", () => {
   const result = evaluateSaveHealth(readableSave);
   assert.equal(result.level, "good");
+  assert.equal(result.score, 100);
   assert.deepEqual(
     result.findings.map(({ level }) => level),
     ["good", "good", "good"],
@@ -24,7 +25,17 @@ test("compatibility warnings are surfaced as warnings", () => {
     compatibility_warning: "Game version mismatch",
   });
   assert.equal(result.level, "warning");
+  assert.equal(result.score, 65);
   assert.equal(result.findings.find(({ key }) => key === "compatibility")?.level, "warning");
+});
+
+test("health score lowers when important save fields cannot be confirmed", () => {
+  const result = evaluateSaveHealth({
+    ...readableSave,
+    game_version: null,
+    experience_points: null,
+  });
+  assert.equal(result.score, 70);
 });
 
 test("unknown version and missing career values request review without changing the data", () => {

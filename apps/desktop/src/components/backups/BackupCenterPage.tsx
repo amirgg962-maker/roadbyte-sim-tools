@@ -2,6 +2,9 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { revealItemInDir } from "@tauri-apps/plugin-opener";
 import type { BackupActionResult, BackupEntry } from "../../types";
+import type { SaveData } from "../../types";
+import { summarizeSaveDelta } from "../../utils/roadbyte-workbench.js";
+import { SaveStoryPanel } from "./SaveStoryPanel";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -33,6 +36,7 @@ import {
   ShieldCheck,
   Trash2,
   UserRound,
+  GitCompareArrows,
 } from "lucide-react";
 import { useSettingsStore } from "../../stores/settings";
 import { translate } from "../../i18n";
@@ -85,6 +89,12 @@ export function BackupCenterPage({
   const [search, setSearch] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [pendingAction, setPendingAction] = useState<PendingAction>(null);
+  const [timelineCompare, setTimelineCompare] = useState<{
+    path: string;
+    rows: Array<{ key: string; before: number; after: number; delta: number }>;
+    error?: string;
+  } | null>(null);
+  const [comparingPath, setComparingPath] = useState<string | null>(null);
   // Refs lock synchronously. React state alone is not enough to prevent two rapid
   // clicks from starting the same filesystem operation before the next render.
   const actionLockRef = useRef(false);
@@ -155,6 +165,41 @@ export function BackupCenterPage({
     } finally {
       actionLockRef.current = false;
       setActingPath(null);
+    }
+  }
+
+  async function compareWithCurrent(backup: BackupEntry) {
+    if (backup.backupType !== "save" || comparingPath) return;
+    setComparingPath(backup.path);
+    setTimelineCompare({ path: backup.path, rows: [] });
+    const joinGameSii = (folder: string) => `${folder.replace(/[\\/]+$/, "")}\\game.sii`;
+    try {
+      const [oldSave, currentSave] = await Promise.all([
+        invoke<SaveData>("load_save", { gameSiiPath: joinGameSii(backup.path) }),
+        invoke<SaveData>("load_save", { gameSiiPath: joinGameSii(backup.originalPath) }),
+      ]);
+      const hasComparableData = [
+        "money",
+        "xp",
+        "level",
+        "trucks_count",
+        "drivers_count",
+        "total_distance_km",
+      ].some(
+        (key) =>
+          oldSave[key as keyof SaveData] != null && currentSave[key as keyof SaveData] != null,
+      );
+      setTimelineCompare({
+        path: backup.path,
+        rows: summarizeSaveDelta(oldSave, currentSave),
+        error: hasComparableData
+          ? undefined
+          : "These two files do not contain comparable career metrics.",
+      });
+    } catch (cause) {
+      setTimelineCompare({ path: backup.path, rows: [], error: String(cause) });
+    } finally {
+      setComparingPath(null);
     }
   }
 
@@ -311,6 +356,8 @@ export function BackupCenterPage({
         </div>
       </section>
 
+      <SaveStoryPanel backups={backups} />
+
       <section className="rounded-2xl border border-border/60 bg-card/30 p-4 md:p-5">
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div className="flex items-center gap-2">
@@ -448,6 +495,19 @@ export function BackupCenterPage({
                       </div>
                     </div>
                     <div className="flex flex-wrap items-center gap-2 xl:justify-end">
+                      {!isProfileBackup && (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="h-9 gap-1.5 rounded-lg border-border/60 bg-background/60 text-xs"
+                          onClick={() => void compareWithCurrent(backup)}
+                          disabled={loading || Boolean(comparingPath)}
+                        >
+                          <GitCompareArrows className="h-3.5 w-3.5" />
+                          {t(comparingPath === backup.path ? "Comparing…" : "Compare timeline")}
+                        </Button>
+                      )}
                       <Button
                         type="button"
                         variant="outline"
@@ -485,6 +545,51 @@ export function BackupCenterPage({
                       </Button>
                     </div>
                   </div>
+                  {timelineCompare?.path === backup.path && (
+                    <div className="mt-3 rounded-xl border border-primary/20 bg-primary/[0.035] p-3">
+                      <p className="text-xs font-semibold">
+                        {t("Time Machine · backup → current save")}
+                      </p>
+                      {timelineCompare.error ? (
+                        <p className="mt-2 break-all text-xs text-destructive">
+                          {t("Could not compare")}: {timelineCompare.error}
+                        </p>
+                      ) : timelineCompare.rows.length ? (
+                        <div className="mt-2 grid gap-2 sm:grid-cols-2">
+                          {timelineCompare.rows.map((row) => (
+                            <div
+                              key={row.key}
+                              className="flex items-center justify-between rounded-lg bg-background/60 px-3 py-2 text-xs"
+                            >
+                              <span>{row.key.replace(/_/g, " ")}</span>
+                              <span className="font-mono">
+                                {row.before.toLocaleString()} → {row.after.toLocaleString()}{" "}
+                                <b
+                                  className={row.delta > 0 ? "text-emerald-400" : "text-amber-400"}
+                                >
+                                  ({row.delta > 0 ? "+" : ""}
+                                  {row.delta.toLocaleString()})
+                                </b>
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="mt-2 text-xs text-muted-foreground">
+                          {t(
+                            "The key career metrics match between this backup and the current save.",
+                          )}
+                        </p>
+                      )}
+                      <button
+                        type="button"
+                        className="mt-2 text-[11px] text-muted-foreground underline"
+                        onClick={() => setTimelineCompare(null)}
+                      >
+                        {t("Close comparison")}
+                      </button>
+                    </div>
+                  )}
                   <div className="mt-3 flex items-center gap-2 border-t border-border/35 pt-3 text-[10px] text-muted-foreground/70">
                     <CalendarClock className="h-3 w-3 shrink-0" />
                     <span className="shrink-0">Restore destination</span>
