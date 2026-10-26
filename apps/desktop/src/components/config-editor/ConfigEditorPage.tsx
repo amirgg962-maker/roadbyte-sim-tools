@@ -14,6 +14,7 @@ import {
   toast,
 } from "ui";
 import * as v from "valibot";
+import { FolderCog, RefreshCw } from "lucide-react";
 import type { ConfigDocument, ConfigValueType, EditResult } from "../../types";
 import { CONFIG_DESCRIPTIONS } from "../../config-descriptions";
 import { ConfigToolbar } from "./FileSelectorBar";
@@ -23,6 +24,9 @@ import { useSettingsStore } from "../../stores/settings";
 import { translate } from "../../i18n";
 import { useSaveEditorStore } from "../../stores/save-editor";
 import { getConfigDiff } from "./config-diff";
+import { getConfigDisplayCategory, inferConfigGame } from "../../config-metadata";
+import { CONFIG_RANGES } from "../../config-ranges";
+import { getConfigRecoveryState } from "./config-recovery";
 
 interface ConfigEditorPageProps {
   readOnly: boolean;
@@ -30,11 +34,13 @@ interface ConfigEditorPageProps {
   onDirtyStateChange: (dirty: boolean) => void;
   onSavingStateChange: (saving: boolean) => void;
   selectedConfigPath?: string | null;
+  gameVersion?: string;
 }
 
 const IntSchema = v.pipe(v.string(), v.regex(/^-?\d+$/));
 const FloatSchema = v.pipe(v.string(), v.regex(/^-?\d*\.?\d+$/));
 const BoolSchema = v.union([v.literal("0"), v.literal("1"), v.literal("true"), v.literal("false")]);
+const StringSchema = v.pipe(v.string(), v.regex(/^[^"\r\n]*$/));
 
 function validateValue(value: string, type: ConfigValueType): string | null {
   const result = v.safeParse(
@@ -44,7 +50,7 @@ function validateValue(value: string, type: ConfigValueType): string | null {
         ? FloatSchema
         : type === "Bool"
           ? BoolSchema
-          : v.string(),
+          : StringSchema,
     value,
   );
   if (result.success) return null;
@@ -53,6 +59,7 @@ function validateValue(value: string, type: ConfigValueType): string | null {
     if (type === "Int") return "Expected an integer";
     if (type === "Float") return "Expected a number";
     if (type === "Bool") return "Expected 0, 1, true, or false";
+    if (type === "String") return 'Text cannot contain " or line breaks';
   }
   return "Invalid value";
 }
@@ -63,8 +70,10 @@ export function ConfigEditorPage({
   onDirtyStateChange,
   onSavingStateChange,
   selectedConfigPath,
+  gameVersion,
 }: ConfigEditorPageProps) {
   const customGamePath = useSettingsStore((s) => s.customGamePath);
+  const openGamePathSettings = useSettingsStore((s) => s.openGamePathSettings);
   const language = useSettingsStore((s) => s.language);
   const t = (text: string) => translate(language, text);
   const [configPaths, setConfigPaths] = useState<string[]>([]);
@@ -77,6 +86,9 @@ export function ConfigEditorPage({
   const [loading, setLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [savePreviewOpen, setSavePreviewOpen] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [discoveryError, setDiscoveryError] = useState<string | null>(null);
+  const configGame = inferConfigGame(selectedConfig ?? selectedConfigPath ?? "");
 
   const changedEntries = useMemo(
     () =>
@@ -121,12 +133,16 @@ export function ConfigEditorPage({
     async (path: string, activeRef?: { current: boolean }) => {
       setSelectedConfig(path);
       setConfigDoc(null);
+      setLoadError(null);
       setConfigFilter("");
       setConfigCategory("");
       setConfigErrors({});
       onStatusChange("Loading config...");
       try {
-        const result = await invoke<ConfigDocument>("load_config", { path });
+        const result = await invoke<ConfigDocument>("load_config", {
+          path,
+          customPath: customGamePath || null,
+        });
         if (activeRef && !activeRef.current) return;
         setConfigDoc(result);
         setOriginalValues(result.entries.map((entry) => entry.value));
@@ -134,6 +150,7 @@ export function ConfigEditorPage({
         onStatusChange(msg);
       } catch (e) {
         if (activeRef && !activeRef.current) return;
+        setLoadError(String(e));
         toast.error(String(e));
         onStatusChange(`Error: ${e}`);
       }
@@ -154,6 +171,8 @@ export function ConfigEditorPage({
       setConfigErrors({});
       setOriginalValues([]);
       setConfigPaths([]);
+      setLoadError(null);
+      setDiscoveryError(null);
       onStatusChange("Searching config files...");
 
       try {
@@ -175,10 +194,12 @@ export function ConfigEditorPage({
             storeState.setSelectedConfigPath(targetPath);
           }
         } else {
+          if (currentSelected) storeState.setSelectedConfigPath(null);
           onStatusChange("No config files found");
         }
       } catch (e) {
         if (!active) return;
+        setDiscoveryError(String(e));
         toast.error(String(e));
         onStatusChange(`Error: ${e}`);
       } finally {
@@ -202,6 +223,35 @@ export function ConfigEditorPage({
     }
   }, [selectedConfigPath, selectedConfig, selectConfig]);
 
+  const retryConfigDiscovery = useCallback(async () => {
+    setLoading(true);
+    setDiscoveryError(null);
+    setLoadError(null);
+    try {
+      const paths = await invoke<string[]>("list_configs", {
+        customPath: customGamePath || null,
+      });
+      setConfigPaths(paths);
+      const currentSelected = useSaveEditorStore.getState().selectedConfigPath;
+      const targetPath = currentSelected && paths.includes(currentSelected) ? currentSelected : paths[0];
+      if (targetPath) {
+        await selectConfig(targetPath);
+        useSaveEditorStore.getState().setSelectedConfigPath(targetPath);
+      } else {
+        setSelectedConfig(null);
+        setConfigDoc(null);
+        useSaveEditorStore.getState().setSelectedConfigPath(null);
+        onStatusChange("No config files found");
+      }
+    } catch (error) {
+      setDiscoveryError(String(error));
+      toast.error(String(error));
+      onStatusChange(`Error: ${error}`);
+    } finally {
+      setLoading(false);
+    }
+  }, [customGamePath, onStatusChange, selectConfig]);
+
   const commitConfigSave = useCallback(async (): Promise<boolean> => {
     if (!selectedConfig || !configDoc || readOnly || isSaving) return false;
     const entriesToSave = configDoc.entries.map((entry) => ({ ...entry }));
@@ -212,6 +262,10 @@ export function ConfigEditorPage({
       const result = await invoke<EditResult>("save_config", {
         path: selectedConfig,
         entries: entriesToSave,
+        expectedEntries: configDoc.entries.map((entry, index) => ({
+          ...entry,
+          value: originalValues[index] ?? entry.value,
+        })),
         customPath: customGamePath || null,
       });
 
@@ -219,6 +273,7 @@ export function ConfigEditorPage({
       // values can be observed again through the normal file-loading command.
       const persistedDoc = await invoke<ConfigDocument>("load_config", {
         path: selectedConfig,
+        customPath: customGamePath || null,
       });
       const mismatches = changedEntries.filter(
         ({ entry, index }) => persistedDoc.entries[index]?.value !== entry.value,
@@ -253,6 +308,7 @@ export function ConfigEditorPage({
     readOnly,
     isSaving,
     customGamePath,
+    originalValues,
   ]);
 
   const onConfigSave = useCallback(() => {
@@ -321,13 +377,18 @@ export function ConfigEditorPage({
 
   const filteredEntries =
     configDoc?.entries.flatMap((e, index) => {
-      if (configCategory && e.category !== configCategory) return [];
+      const category = getConfigDisplayCategory(e.key, configGame, gameVersion, {
+        description: CONFIG_DESCRIPTIONS[e.key],
+        range: CONFIG_RANGES[e.key],
+      });
+      if (configCategory && category !== configCategory) return [];
       if (configFilter) {
         const q = configFilter.toLowerCase();
         if (
           !(
             e.key.toLowerCase().includes(q) ||
             e.value.toLowerCase().includes(q) ||
+            category.toLowerCase().includes(q) ||
             formatKeyName(e.key).toLowerCase().includes(q)
           )
         )
@@ -345,9 +406,54 @@ export function ConfigEditorPage({
   }
 
   if (!configDoc) {
+    const recoveryState = getConfigRecoveryState({
+      configCount: configPaths.length,
+      selectedPath: selectedConfig,
+      loadError,
+      discoveryError,
+    });
     return (
-      <div className="flex flex-col items-center justify-center h-full gap-3 text-sm text-muted-foreground">
-        <p>{t(configPaths.length === 0 ? "No config files found." : "Failed to load config.")}</p>
+      <div className="flex h-full flex-col items-center justify-center gap-4 px-6 text-center">
+        <p className="max-w-lg text-sm text-muted-foreground">
+          {t(
+            recoveryState.message === "missing"
+              ? "No config files were found. Check the game folder or scan again."
+              : recoveryState.message === "discovery-error"
+                ? "Config discovery failed. Retry the scan or choose a game folder."
+                : "The config file was found but could not be loaded. Retry opening it or choose a game folder.",
+          )}
+        </p>
+        {loadError && (
+          <p className="max-w-lg break-all font-mono text-[11px] text-muted-foreground/80">
+            {loadError}
+          </p>
+        )}
+        {discoveryError && (
+          <p className="max-w-lg break-all font-mono text-[11px] text-muted-foreground/80">
+            {discoveryError}
+          </p>
+        )}
+        <div className="flex flex-wrap items-center justify-center gap-2">
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => {
+              if (recoveryState.retry === "scan") {
+                void retryConfigDiscovery();
+              } else {
+                const path = selectedConfig ?? configPaths[0];
+                if (path) void selectConfig(path);
+              }
+            }}
+          >
+            <RefreshCw className="mr-2 h-3.5 w-3.5" />
+            {t(recoveryState.retry === "scan" ? "Retry config scan" : "Retry loading config")}
+          </Button>
+          <Button size="sm" onClick={openGamePathSettings}>
+            <FolderCog className="mr-2 h-3.5 w-3.5" />
+            {t("Open game-path settings")}
+          </Button>
+        </div>
       </div>
     );
   }
@@ -363,9 +469,15 @@ export function ConfigEditorPage({
           categories={[
             ...new Set(
               configDoc.entries
-                .map((entry) => entry.category)
-                .filter((category) => category.length > 0),
+                .map((entry) =>
+                  getConfigDisplayCategory(entry.key, configGame, gameVersion, {
+                    description: CONFIG_DESCRIPTIONS[entry.key],
+                    range: CONFIG_RANGES[entry.key],
+                  }),
+                ),
             ),
+            // This is a new array from Set, so sorting it cannot mutate shared config state.
+            // oxlint-disable-next-line unicorn/no-array-sort
           ].sort((a, b) => a.localeCompare(b))}
           matchCount={filteredEntries.length}
           totalCount={configDoc.entries.length}
@@ -396,6 +508,8 @@ export function ConfigEditorPage({
             onValueChange={onConfigValueChange}
             onRevert={onRevert}
             descriptions={CONFIG_DESCRIPTIONS}
+            game={configGame}
+            gameVersion={gameVersion}
             readOnly={readOnly || isSaving}
           />
         </div>

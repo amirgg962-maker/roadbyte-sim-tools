@@ -13,6 +13,7 @@ import {
 import { Sun, Moon, Monitor, ExternalLink, Folder, Settings, Shield } from "lucide-react";
 import { useSettingsStore } from "../../stores/settings";
 import { translate } from "../../i18n";
+import { useEffect } from "react";
 import { GamePathSelector } from "../save-editor/GamePathSelector";
 import { UpdaterSettingsSection } from "./UpdaterSettingsSection";
 
@@ -44,8 +45,24 @@ export function SettingsDialog({ appInfo }: SettingsDialogProps) {
     setIsSettingsOpen,
     language,
     setLanguage,
+    settingsTarget,
+    clearSettingsTarget,
   } = useSettingsStore();
   const t = (text: string) => translate(language, text);
+
+  useEffect(() => {
+    if (!isSettingsOpen || settingsTarget !== "game-directory") return;
+    const frame = requestAnimationFrame(() => {
+      const gameDirectorySection = document.getElementById("settings-game-directory");
+      gameDirectorySection?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+      gameDirectorySection?.focus({ preventScroll: true });
+      clearSettingsTarget();
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [isSettingsOpen, settingsTarget, clearSettingsTarget]);
 
   return (
     <Dialog open={isSettingsOpen} onOpenChange={setIsSettingsOpen}>
@@ -145,7 +162,11 @@ export function SettingsDialog({ appInfo }: SettingsDialogProps) {
 
           <Separator />
 
-          <section className="space-y-3">
+          <section
+            id="settings-game-directory"
+            tabIndex={-1}
+            className="scroll-mt-4 space-y-3 focus:outline-none"
+          >
             <h4 className="flex items-center gap-2 text-sm font-medium text-foreground">
               <Folder className="h-4 w-4 text-muted-foreground" />
               {t("Game Directory")}

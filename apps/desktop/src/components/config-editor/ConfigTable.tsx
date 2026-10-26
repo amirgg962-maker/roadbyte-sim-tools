@@ -25,7 +25,13 @@ import {
 import { RotateCcw, Info, CircleAlert } from "lucide-react";
 import type { ConfigEntry, ConfigValueType } from "../../types";
 import { CONFIG_RANGES } from "../../config-ranges";
-import type { ConfigRange } from "../../config-ranges";
+import {
+  getConfigMetadata,
+  getConfigDisplayCategory,
+  getNumericControlState,
+  type ConfigGame,
+  type ConfigMetadata,
+} from "../../config-metadata";
 import { useSettingsStore } from "../../stores/settings";
 import { translate } from "../../i18n";
 
@@ -57,6 +63,8 @@ interface ConfigTableProps {
   onValueChange: (index: number, value: string, type: ConfigValueType) => void;
   onRevert: (index: number) => void;
   descriptions: Record<string, string>;
+  game: ConfigGame;
+  gameVersion?: string;
   readOnly: boolean;
 }
 
@@ -64,7 +72,9 @@ function NumericSlider({
   entry,
   entryIndex,
   step,
-  range,
+  metadata,
+  game,
+  gameVersion,
   onValueChange,
   readOnly,
   error,
@@ -72,7 +82,9 @@ function NumericSlider({
   entry: ConfigEntry;
   entryIndex: number;
   step: number;
-  range?: ConfigRange;
+  metadata: ConfigMetadata;
+  game: ConfigGame;
+  gameVersion?: string;
   onValueChange: (index: number, value: string, type: ConfigValueType) => void;
   readOnly: boolean;
   error: string | null;
@@ -82,19 +94,12 @@ function NumericSlider({
   const parsed =
     entry.value_type === "Int" ? Number.parseInt(entry.value, 10) : Number.parseFloat(entry.value);
   const safeNum = Number.isFinite(parsed) ? parsed : 0;
-
-  let min: number, max: number, effectiveStep: number;
-  if (range) {
-    min = range.min;
-    max = range.max;
-    effectiveStep = range.step;
-  } else {
-    min = safeNum >= 0 ? 0 : -10000;
-    max = safeNum >= 0 ? 10000 : 0;
-    effectiveStep = step;
-  }
+  const numericState = getNumericControlState(entry.value, metadata, game, gameVersion);
+  const effectiveRange = numericState.range;
+  const min = effectiveRange?.min ?? 0;
+  const max = effectiveRange?.max ?? 1;
+  const effectiveStep = effectiveRange?.step ?? step;
   const sliderValue = Math.min(max, Math.max(min, safeNum));
-  const hasRange = Boolean(range);
   // Keep pointer/keyboard movement local while the thumb is moving. Committing
   // every tick updates the parent config document and re-renders every row in
   // the table, which makes the slider feel laggy on large config files.
@@ -109,6 +114,37 @@ function NumericSlider({
 
   const formatSliderValue = (value: number) =>
     entry.value_type === "Int" ? String(Math.round(value)) : value.toFixed(2);
+
+  if (!numericState.showSlider || !effectiveRange) {
+    return (
+      <div className="min-w-[220px] space-y-2">
+        <Input
+          type="number"
+          inputMode="decimal"
+          value={entry.value}
+          onChange={(event) => onValueChange(entryIndex, event.target.value, entry.value_type)}
+          readOnly={readOnly}
+          aria-label={`${humanizeKey(entry.key)} value`}
+          aria-invalid={Boolean(error)}
+          step={step}
+          className={`h-8 w-[140px] shrink-0 text-right font-mono text-xs tabular-nums ${error ? "border-destructive focus-visible:ring-destructive" : ""}`}
+        />
+        <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
+          {numericState.outOfRange ? (
+            <>
+              <CircleAlert className="h-3 w-3 shrink-0 text-amber-400" />
+              <span>{t("Current value is outside the reference range; it is preserved.")}</span>
+            </>
+          ) : effectiveRange ? (
+            <span>{t("Reference range only; not verified for this game version.")}</span>
+          ) : (
+            <span>{t("No verified range; enter an exact value.")}</span>
+          )}
+        </div>
+        {error && <p className="text-[11px] text-destructive">{error}</p>}
+      </div>
+    );
+  }
 
   return (
     <div className="min-w-[220px] space-y-2">
@@ -144,21 +180,17 @@ function NumericSlider({
           aria-label={`${humanizeKey(entry.key)} value`}
           aria-invalid={Boolean(error)}
           step={effectiveStep}
-          min={hasRange ? range?.min : undefined}
-          max={hasRange ? range?.max : undefined}
+          min={effectiveRange.min}
+          max={effectiveRange.max}
           className={`h-8 w-[100px] shrink-0 text-right font-mono text-xs tabular-nums ${error ? "border-destructive focus-visible:ring-destructive" : ""}`}
         />
       </div>
       <div className="flex items-center justify-between gap-2 text-[10px] text-muted-foreground">
-        {range ? (
-          <>
-            <span>Min {range.min}</span>
-            <span className="font-medium text-foreground/70">Step {range.step}</span>
-            <span>Max {range.max}</span>
-          </>
-        ) : (
-          <span>{t("Slider range is approximate; type an exact value if needed.")}</span>
-        )}
+        <>
+          <span>Min {effectiveRange.min}</span>
+          <span className="font-medium text-foreground/70">Step {effectiveRange.step}</span>
+          <span>Max {effectiveRange.max}</span>
+        </>
       </div>
       {error && <p className="text-[11px] text-destructive">{error}</p>}
     </div>
@@ -171,12 +203,18 @@ function ValueCell({
   error,
   onValueChange,
   readOnly,
+  metadata,
+  game,
+  gameVersion,
 }: {
   entry: ConfigEntry;
   entryIndex: number;
   error: string | null;
   onValueChange: (index: number, value: string, type: ConfigValueType) => void;
   readOnly: boolean;
+  metadata: ConfigMetadata;
+  game: ConfigGame;
+  gameVersion?: string;
 }) {
   const language = useSettingsStore((state) => state.language);
   const t = (text: string) => translate(language, text);
@@ -187,7 +225,9 @@ function ValueCell({
           entry={entry}
           entryIndex={entryIndex}
           step={1}
-          range={CONFIG_RANGES[entry.key]}
+          metadata={metadata}
+          game={game}
+          gameVersion={gameVersion}
           onValueChange={onValueChange}
           readOnly={readOnly}
           error={error}
@@ -199,7 +239,9 @@ function ValueCell({
           entry={entry}
           entryIndex={entryIndex}
           step={0.1}
-          range={CONFIG_RANGES[entry.key]}
+          metadata={metadata}
+          game={game}
+          gameVersion={gameVersion}
           onValueChange={onValueChange}
           readOnly={readOnly}
           error={error}
@@ -273,6 +315,8 @@ export function ConfigTable({
   onValueChange,
   onRevert,
   descriptions,
+  game,
+  gameVersion,
   readOnly,
 }: ConfigTableProps) {
   const language = useSettingsStore((state) => state.language);
@@ -302,6 +346,14 @@ export function ConfigTable({
             const original = originalValues[index];
             const isModified = original !== undefined && original !== entry.value;
             const description = descriptions[entry.key];
+            const metadata = getConfigMetadata(entry.key, game, gameVersion, {
+              description,
+              range: CONFIG_RANGES[entry.key],
+            });
+            const displayCategory = getConfigDisplayCategory(entry.key, game, gameVersion, {
+              description,
+              range: CONFIG_RANGES[entry.key],
+            });
 
             return (
               <TableRow
@@ -342,11 +394,14 @@ export function ConfigTable({
                     error={error}
                     onValueChange={onValueChange}
                     readOnly={readOnly}
+                    metadata={metadata}
+                    game={game}
+                    gameVersion={gameVersion}
                   />
                 </TableCell>
                 <TableCell className="py-3 align-top">
                   <span className="inline-flex max-w-full rounded-md border border-border/70 bg-background/50 px-2 py-1 text-[10px] leading-4 text-muted-foreground">
-                    {entry.category || t("Other")}
+                    {t(displayCategory)}
                   </span>
                 </TableCell>
                 <TableCell className="py-3 pr-4 align-top">
@@ -370,7 +425,7 @@ export function ConfigTable({
                           : t("No changes to revert")}
                       </TooltipContent>
                     </Tooltip>
-                    {description && (
+                    {(metadata.description || metadata.sourceNote) && (
                       <Popover>
                         <PopoverTrigger asChild>
                           <Button
@@ -386,7 +441,55 @@ export function ConfigTable({
                           <p className="font-mono text-[11px] font-semibold text-foreground">
                             {entry.key}
                           </p>
-                          <p className="leading-5 text-muted-foreground">{description}</p>
+                          {metadata.description && (
+                            <p className="leading-5 text-muted-foreground">{metadata.description}</p>
+                          )}
+                          <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+                            {t(`Evidence: ${metadata.evidence}`)}
+                          </p>
+                          {metadata.games && (
+                            <p className="text-[10px] text-muted-foreground">
+                              {t("Scope:")} {metadata.games.join(", ")}
+                            </p>
+                          )}
+                          {metadata.valueType && (
+                            <p className="text-[10px] text-muted-foreground">
+                              {t("Documented type:")} {metadata.valueType}
+                            </p>
+                          )}
+                          {metadata.defaultValue !== undefined && (
+                            <p className="text-[10px] text-muted-foreground">
+                              {t("Documented default:")} {metadata.defaultValue}
+                            </p>
+                          )}
+                          {metadata.allowedValues && (
+                            <p className="text-[10px] text-muted-foreground">
+                              {t("Documented values:")} {metadata.allowedValues.join(", ")}
+                            </p>
+                          )}
+                          {metadata.range && (
+                            <p className="text-[10px] text-muted-foreground">
+                              {t("Reference range:")} {metadata.range.min}–{metadata.range.max}
+                            </p>
+                          )}
+                          {metadata.sourceNote && (
+                            <p className="leading-4 text-muted-foreground">{t(metadata.sourceNote)}</p>
+                          )}
+                          {metadata.evidence === "legacy-primary" && (
+                            <p className="leading-4 text-muted-foreground">
+                              {t("Per-game applicability is not confirmed.")}
+                            </p>
+                          )}
+                          {metadata.source && (
+                            <a
+                              href={metadata.source}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="block text-primary underline-offset-4 hover:underline"
+                            >
+                              {t("Open source reference")}
+                            </a>
+                          )}
                         </PopoverContent>
                       </Popover>
                     )}

@@ -70,7 +70,7 @@ export function ConfigToolbar({
           <SelectItem value="__all_categories__">{t("All categories")}</SelectItem>
           {categories.map((category) => (
             <SelectItem key={category} value={category}>
-              {category}
+              {t(category)}
             </SelectItem>
           ))}
         </SelectContent>

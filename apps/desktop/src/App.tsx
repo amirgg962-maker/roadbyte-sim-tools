@@ -46,6 +46,7 @@ interface AppVersionInfo {
   game_version: string | null;
   tested_game_version: string;
   compatibility_warning: string | null;
+  config_path?: string | null;
 }
 
 function App() {
@@ -175,15 +176,18 @@ function App() {
   // App version info
   useEffect(() => {
     let active = true;
-    invoke<AppVersionInfo>("get_app_info", { customPath: customGamePath || null })
+    const selectedConfigDirectory = selectedConfigPath?.replace(/[\\/][^\\/]+$/, "");
+    invoke<AppVersionInfo>("get_app_info", {
+      customPath: selectedConfigDirectory || customGamePath || null,
+    })
       .then((info) => {
-        if (active) setAppInfo(info);
+        if (active) setAppInfo({ ...info, config_path: selectedConfigPath ?? null });
       })
       .catch(() => {});
     return () => {
       active = false;
     };
-  }, [customGamePath]);
+  }, [customGamePath, selectedConfigPath]);
 
   // List configs
   useEffect(() => {
@@ -416,6 +420,11 @@ function App() {
               onDirtyStateChange={setHasUnsavedConfigChanges}
               onSavingStateChange={setIsConfigSaving}
               selectedConfigPath={selectedConfigPath}
+              gameVersion={
+                appInfo?.config_path === selectedConfigPath
+                  ? (appInfo.game_version ?? undefined)
+                  : undefined
+              }
             />
           ) : (
             <BackupCenterPage
