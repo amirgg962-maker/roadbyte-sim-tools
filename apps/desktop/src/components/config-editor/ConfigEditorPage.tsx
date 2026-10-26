@@ -139,7 +139,10 @@ export function ConfigEditorPage({
       setConfigErrors({});
       onStatusChange("Loading config...");
       try {
-        const result = await invoke<ConfigDocument>("load_config", { path });
+        const result = await invoke<ConfigDocument>("load_config", {
+          path,
+          customPath: customGamePath || null,
+        });
         if (activeRef && !activeRef.current) return;
         setConfigDoc(result);
         setOriginalValues(result.entries.map((entry) => entry.value));
@@ -270,6 +273,7 @@ export function ConfigEditorPage({
       // values can be observed again through the normal file-loading command.
       const persistedDoc = await invoke<ConfigDocument>("load_config", {
         path: selectedConfig,
+        customPath: customGamePath || null,
       });
       const mismatches = changedEntries.filter(
         ({ entry, index }) => persistedDoc.entries[index]?.value !== entry.value,

@@ -45,8 +45,10 @@ pub fn list_configs(custom_path: Option<String>) -> Result<Vec<String>, String> 
 }
 
 #[tauri::command]
-pub fn load_config(path: String) -> Result<ConfigDocument, String> {
-    let content = std::fs::read_to_string(&path).map_err(|e| e.to_string())?;
+pub fn load_config(path: String, custom_path: Option<String>) -> Result<ConfigDocument, String> {
+    let file_path = Path::new(&path);
+    validate_config_path(file_path, custom_path.as_deref())?;
+    let content = std::fs::read_to_string(file_path).map_err(|e| e.to_string())?;
     let doc = ConfigDocument::parse(&content);
     Ok(doc)
 }
@@ -187,6 +189,18 @@ mod tests {
         std::fs::write(&unrelated, "uset r_test \"1\"\n").unwrap();
 
         assert!(validate_config_path(&unrelated, None).is_err());
+    }
+
+    #[test]
+    fn load_config_rejects_path_outside_detected_and_custom_locations() {
+        let directory = tempfile::tempdir().unwrap();
+        let unrelated = directory.path().join("unlisted").join("config.cfg");
+        std::fs::create_dir_all(unrelated.parent().unwrap()).unwrap();
+        std::fs::write(&unrelated, "uset r_test \"1\"\n").unwrap();
+
+        let result = load_config(unrelated.to_string_lossy().into_owned(), None);
+
+        assert!(result.is_err());
     }
 
     #[test]
