@@ -55,20 +55,16 @@ pub fn load_config(path: String) -> Result<ConfigDocument, String> {
 pub fn save_config(
     path: String,
     entries: Vec<ConfigEntry>,
+    expected_entries: Vec<ConfigEntry>,
     custom_path: Option<String>,
     state: tauri::State<'_, super::read_only::ReadOnlyState>,
 ) -> Result<EditResult, String> {
     state.ensure_writable()?;
-    for entry in &entries {
-        if let Err(msg) = entry.val_type.validate(&entry.value) {
-            return Err(format!("Validation error for {}: {}", entry.key, msg));
-        }
-    }
 
     let file_path = Path::new(&path);
     validate_config_path(file_path, custom_path.as_deref())?;
     let original = std::fs::read_to_string(file_path).map_err(|error| error.to_string())?;
-    let content = ConfigDocument::update_text(&original, &entries)?;
+    let content = ConfigDocument::update_text_if_unchanged(&original, &expected_entries, &entries)?;
     let backup = backup_file(file_path).map_err(|e| e.to_string())?;
     crate::core::atomic_file::write_atomic(file_path, content.as_bytes())
         .map_err(|error| error.to_string())?;

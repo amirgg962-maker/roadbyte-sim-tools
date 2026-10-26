@@ -11,12 +11,15 @@ interface SettingsState {
   customGamePath: string;
   language: AppLanguage;
   isSettingsOpen: boolean;
+  settingsTarget: "game-directory" | null;
 
   setReadOnly: (value: boolean) => void;
   setLastTab: (tab: TabId) => void;
   setCustomGamePath: (path: string) => void;
   setLanguage: (language: AppLanguage) => void;
   setIsSettingsOpen: (open: boolean) => void;
+  openGamePathSettings: () => void;
+  clearSettingsTarget: () => void;
 }
 
 export const useSettingsStore = create<SettingsState>()(
@@ -27,12 +30,15 @@ export const useSettingsStore = create<SettingsState>()(
       customGamePath: "",
       language: "en",
       isSettingsOpen: false,
+      settingsTarget: null,
 
       setReadOnly: (readOnly) => set({ readOnly }),
       setLastTab: (lastTab) => set({ lastTab }),
       setCustomGamePath: (customGamePath) => set({ customGamePath }),
       setLanguage: (language) => set({ language }),
       setIsSettingsOpen: (isSettingsOpen) => set({ isSettingsOpen }),
+      openGamePathSettings: () => set({ isSettingsOpen: true, settingsTarget: "game-directory" }),
+      clearSettingsTarget: () => set({ settingsTarget: null }),
     }),
     {
       name: "settings",

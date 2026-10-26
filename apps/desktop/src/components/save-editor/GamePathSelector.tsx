@@ -26,7 +26,7 @@ export function GamePathSelector({
       const selected = await open({
         directory: true,
         multiple: false,
-        title: t("Select Game or Profiles Directory"),
+        title: translate(language, "Select Game or Profiles Directory"),
       });
       if (selected && typeof selected === "string") {
         onPathChange(selected);
@@ -36,7 +36,7 @@ export function GamePathSelector({
     } catch (e) {
       toast.error(`Failed to open directory picker: ${e}`);
     }
-  }, [onPathChange, t]);
+  }, [language, onPathChange]);
 
   const handleSaveInput = useCallback(() => {
     const trimmed = inputVal.trim();

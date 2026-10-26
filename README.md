@@ -20,7 +20,7 @@ For most Windows PCs, choose the file ending in **`.msi`** on the latest release
 - **Profile and save browser:** find profiles and saves and review available progress information.
 - **Save editor:** change supported money and experience values and use supported quick actions.
 - **Save management:** rename, clone, and delete save files.
-- **Configuration editor:** search and edit `config.cfg` values with type-aware validation.
+- **Configuration editor:** search and edit `config.cfg` with type-aware validation, source-aware guidance, cautious numeric controls, and recovery help.
 - **Automatic backups:** create timestamped backups before supported edits.
 - **Safer editing:** the app opens in read-only mode; editing must be explicitly enabled.
 - **Compatibility information:** review detected game details and supported-version warnings.

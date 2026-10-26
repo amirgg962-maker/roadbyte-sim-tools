@@ -55,7 +55,13 @@ impl ConfigValueType {
                     ))
                 }
             }
-            Self::String => Ok(()),
+            Self::String => {
+                if value.contains(['"', '\r', '\n']) {
+                    Err("Expected text without quotes or line breaks".into())
+                } else {
+                    Ok(())
+                }
+            }
         }
     }
 }
@@ -164,6 +170,11 @@ impl ConfigDocument {
                 continue;
             }
 
+            entry
+                .val_type
+                .validate(&entry.value)
+                .map_err(|error| format!("Validation error for {}: {}", entry.key, error))?;
+
             let (value_start, value_end) = config_value_span(line)
                 .ok_or_else(|| format!("Could not locate value for config key {}", entry.key))?;
             output.push_str(&line[..value_start]);
@@ -178,6 +189,31 @@ impl ConfigDocument {
             return Err("Config entry count changed; refusing to rewrite the file".into());
         }
         Ok(output)
+    }
+
+    pub fn update_text_if_unchanged(
+        original: &str,
+        expected_entries: &[ConfigEntry],
+        entries: &[ConfigEntry],
+    ) -> Result<String, String> {
+        let current = Self::parse(original);
+        let has_external_changes = current.entries.len() != expected_entries.len()
+            || current
+                .entries
+                .iter()
+                .zip(expected_entries)
+                .any(|(current, expected)| {
+                    current.key != expected.key || current.value != expected.value
+                });
+
+        if has_external_changes {
+            return Err(
+                "Config file changed since it was loaded. Reload it before saving to avoid overwriting external changes."
+                    .into(),
+            );
+        }
+
+        Self::update_text(original, entries)
     }
 
     pub fn get(&self, key: &str) -> Option<&ConfigEntry> {
@@ -388,6 +424,15 @@ mod tests {
     fn test_validate_string() {
         assert!(ConfigValueType::String.validate("anything").is_ok());
         assert!(ConfigValueType::String.validate("").is_ok());
+        assert!(ConfigValueType::String
+            .validate("a \"quoted\" value")
+            .is_err());
+        assert!(ConfigValueType::String
+            .validate("line one\nline two")
+            .is_err());
+        assert!(ConfigValueType::String
+            .validate("line one\rline two")
+            .is_err());
     }
 
     // --- ConfigDocument::parse ---
@@ -429,6 +474,63 @@ mod tests {
             updated,
             "# heading\r\nuset   r_scale \"2.0\"  \r\n\r\nuset g_console \"1\"\r\n"
         );
+    }
+
+    #[test]
+    fn test_update_text_rejects_string_with_unescaped_quote() {
+        let original = "uset i_joy \"controller\"\n";
+        let mut document = ConfigDocument::parse(original);
+        document.entries[0].value = "controller \"custom\"".into();
+
+        let result = ConfigDocument::update_text(original, &document.entries);
+
+        assert!(result.is_err());
+        assert!(result.unwrap_err().contains("quotes or line breaks"));
+    }
+
+    #[test]
+    fn test_update_text_preserves_existing_escaped_quotes_when_other_value_changes() {
+        let original = "uset i_joy \"controller \\\"custom\\\"\"\nuset r_scale \"1.0\"\n";
+        let mut document = ConfigDocument::parse(original);
+        document.entries[1].value = "2.0".into();
+
+        let updated = ConfigDocument::update_text(original, &document.entries).unwrap();
+
+        assert_eq!(
+            updated,
+            "uset i_joy \"controller \\\"custom\\\"\"\nuset r_scale \"2.0\"\n"
+        );
+    }
+
+    #[test]
+    fn test_update_text_rejects_config_changed_since_it_was_loaded() {
+        let loaded_text = "uset r_scale \"1.0\"\nuset g_traffic \"1\"\n";
+        let changed_on_disk = "uset r_scale \"1.0\"\nuset g_traffic \"3\"\n";
+        let mut edited_document = ConfigDocument::parse(loaded_text);
+        edited_document.entries[0].value = "2.0".into();
+
+        let result = ConfigDocument::update_text_if_unchanged(
+            changed_on_disk,
+            &ConfigDocument::parse(loaded_text).entries,
+            &edited_document.entries,
+        );
+
+        assert!(result.is_err());
+        assert!(result.unwrap_err().contains("changed since it was loaded"));
+    }
+
+    #[test]
+    fn test_update_text_saves_when_config_matches_loaded_snapshot() {
+        let original = "# keep this comment\nuset r_scale \"1.0\"\n";
+        let expected = ConfigDocument::parse(original);
+        let mut edited = ConfigDocument::parse(original);
+        edited.entries[0].value = "2.0".into();
+
+        let updated =
+            ConfigDocument::update_text_if_unchanged(original, &expected.entries, &edited.entries)
+                .unwrap();
+
+        assert_eq!(updated, "# keep this comment\nuset r_scale \"2.0\"\n");
     }
 
     #[test]

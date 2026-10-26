@@ -340,10 +340,51 @@ const fa: Record<string, string> = {
     "پشتیبان‌های ذخیره و پروفایل را در مرکز پشتیبان‌گیری مدیریت کنید.",
   "No config files found.": "فایل تنظیماتی پیدا نشد.",
   "Failed to load config.": "بارگذاری فایل تنظیمات ناموفق بود.",
+  "No config files were found. Check the game folder or scan again.":
+    "فایل تنظیماتی پیدا نشد. مسیر بازی را بررسی کنید یا دوباره جست‌وجو کنید.",
+  "Config discovery failed. Retry the scan or choose a game folder.":
+    "جست‌وجوی فایل تنظیمات شکست خورد. دوباره تلاش کنید یا پوشهٔ بازی را انتخاب کنید.",
+  "The config file was found but could not be loaded. Retry opening it or choose a game folder.":
+    "فایل تنظیمات پیدا شد اما بارگذاری نشد. دوباره تلاش کنید یا پوشهٔ بازی را انتخاب کنید.",
+  "Retry config scan": "جست‌وجوی دوبارهٔ فایل تنظیمات",
+  "Retry loading config": "تلاش دوباره برای بارگذاری تنظیمات",
+  "Open game-path settings": "بازکردن تنظیم مسیر بازی",
   "Saving...": "در حال ذخیره…",
   "Save Config": "ذخیرهٔ تنظیمات",
   "Fix validation errors before saving": "پیش از ذخیره، خطاهای اعتبارسنجی را برطرف کنید",
   "No entries match the filter.": "موردی با این فیلتر پیدا نشد.",
+  "Unverified": "تأییدنشده",
+  "Graphics": "گرافیک",
+  "Gameplay": "گیم‌پلی",
+  "Developer": "توسعه‌دهنده",
+  "Current value is outside the reference range; it is preserved.":
+    "مقدار فعلی بیرون از بازهٔ مرجع است و بدون تغییر حفظ می‌شود.",
+  "Reference range only; not verified for this game version.":
+    "این فقط بازهٔ مرجع است و برای این نسخهٔ بازی تأیید نشده.",
+  "No verified range; enter an exact value.":
+    "بازهٔ تأییدشده‌ای نداریم؛ مقدار دقیق را وارد کنید.",
+  "Evidence: current-primary": "منبع رسمیِ جاری",
+  "Evidence: observed-current-game": "بررسی‌شده روی همین نسخهٔ بازی",
+  "Evidence: legacy-primary": "منبع رسمیِ قدیمی",
+  "Evidence: community": "منبع جامعهٔ کاربران",
+  "Evidence: app-guidance": "راهنمای Roadbyte؛ تأییدنشده",
+  "Evidence: unknown": "اطلاعات تأییدنشده",
+  "Open source reference": "بازکردن منبع",
+  "Scope:": "دامنه:",
+  "Documented type:": "نوع مستندشده:",
+  "Documented default:": "پیش‌فرض مستندشده:",
+  "Documented values:": "مقادیر مستندشده:",
+  "Reference range:": "بازهٔ مرجع:",
+  "Legacy SCS reference; the page is marked obsolete and may not match current game versions.":
+    "مرجع قدیمی SCS؛ صفحه منسوخ علامت‌گذاری شده و ممکن است با نسخه‌های کنونی بازی هماهنگ نباشد.",
+  "Legacy SCS reference; verify against the installed game version.":
+    "مرجع قدیمی SCS؛ با نسخهٔ نصب‌شدهٔ بازی تطبیق دهید.",
+  "Per-game applicability is not confirmed.":
+    "معتبر بودن این گزینه برای بازی انتخاب‌شده تأیید نشده است.",
+  "Legacy SCS reference; its -1 to 1 bounds may not match current game versions.":
+    "مرجع قدیمی SCS؛ بازهٔ ۱- تا ۱ ممکن است با نسخه‌های کنونی بازی هماهنگ نباشد.",
+  "Roadbyte guidance; not verified as a current game limit.":
+    "راهنمای Roadbyte؛ به‌عنوان محدودیت نسخهٔ کنونی بازی تأیید نشده است.",
   "Search keys, values, categories…": "جست‌وجوی کلیدها، مقادیر و دسته‌ها…",
   "Search configuration settings": "جست‌وجوی تنظیمات بازی",
   "Clear search": "پاک‌کردن جست‌وجو",

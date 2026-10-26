@@ -42,6 +42,6 @@ Roadbyte Sim Tools is a desktop utility built with Tauri 2 for Euro Truck Simula
 
 ## Release status
 
-Roadbyte Sim Tools v0.1.3 is publicly available from [GitHub Releases](https://github.com/amirgg962-maker/roadbyte-sim-tools/releases/latest). The release workflow completed successfully for Windows x64, Linux x86_64, macOS Intel, and macOS Apple Silicon, and publishes signed updater artifacts with `latest.json`.
+The latest public version of Roadbyte Sim Tools is available from [GitHub Releases](https://github.com/amirgg962-maker/roadbyte-sim-tools/releases/latest). Releases include Windows x64, Linux x86_64, macOS Intel, and macOS Apple Silicon packages, plus signed updater artifacts and `latest.json`.
 
 For Windows, download the `.msi` installer; the `x64-setup.exe` is an alternative. The app provides an update check under Settings → Software updates. If an update fails or the version shown after restart is incorrect, install the latest release manually and report the issue with the app version and operating system.
