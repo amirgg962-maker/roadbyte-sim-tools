@@ -169,6 +169,7 @@ let output = doc.to_string();
 cargo test --workspace --all-features --locked
 pnpm check-types
 pnpm lint
+pnpm test:frontend
 pnpm prepush
 ```
 
@@ -178,7 +179,7 @@ pnpm prepush
 
 - **TypeScript**: `verbatimModuleSyntax` is on — always use `import type` for type-only imports.
 - **Rust**: Clippy lints are strict (`unwrap_used`, `expect_used`, `todo`, `dbg_macro`, `print_stdout`, `print_stderr` all warn). Tests have relaxed rules via `.clippy.toml`.
-- **Local validation**: `pnpm prepush` runs type checks, lint, Rust formatting, Clippy, and the Rust test suite.
+- **Local validation**: `pnpm prepush` runs type checks, lint, Node `node:test` frontend tests, Rust formatting, Clippy, and the Rust test suite.
 - **Path aliases**: `@/*` → `apps/desktop/src/*`, `@ui/*` → `packages/ui/src/*`.
 - **Package manager**: pnpm only. The catalog in `pnpm-workspace.yaml` pins shared dependencies.
 

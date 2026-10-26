@@ -16,7 +16,7 @@ pnpm cargo:fmt        # cargo fmt --all --check
 pnpm cargo:clippy     # cargo clippy --workspace --all-targets -- -D warnings
 pnpm cargo:build      # cargo build --workspace
 pnpm tauri            # pnpm --filter @roadbyte-sim-tools/desktop tauri <subcommand>
-pnpm prepush          # full CI: types + clippy + fmt + test (run before push)
+pnpm prepush          # types + lint + frontend tests + Clippy + fmt + Rust tests
 pnpm test             # cargo test --workspace --all-features --locked
 ```
 
@@ -28,7 +28,7 @@ Use `pnpm --filter @roadbyte-sim-tools/desktop` for per-package scripts. Package
 - **Backend**: Rust Tauri commands in `commands/` → `core/` (game detection, profiles, backups) → `save_parser/` (SII parsing, ScsC crypto)
 - **Styling**: Tailwind CSS v4 (no `tailwind.config.js`; uses `@tailwindcss/vite` plugin) + shadcn/ui from `packages/ui`
 - **State**: Zustand stores in `apps/desktop/src/stores/` with Tauri plugin-store persistence (falls back to localStorage)
-- **Fonts**: Inter Variable (sans, weights 300-800), Source Code Pro Variable (mono)
+- **Fonts**: Inter Variable and Source Code Pro Variable come from the shared UI package; Vazirmatn Variable is bundled locally and used for Persian.
 
 ## Rust constraints
 
@@ -56,10 +56,11 @@ oxfmt for formatting: double quotes, semicolons on.
 
 ## Testing
 
-- **No JS test framework** — only Rust tests via `cargo test`. Run focused: `cargo test -p roadbyte-sim-tools -- <test_name>`.
+- Frontend tests use Node's built-in `node:test` runner: `pnpm test:frontend`.
+- Rust tests use Cargo. Run focused tests with `cargo test -p roadbyte-sim-tools -- <test_name>`.
 - Golden tests (`golden_test.rs`) write actual output to `*.actual` next to golden files if they differ. Missing golden files are **auto-bootstrapped** on first run.
 - Test fixtures in `tests/fixtures/`. Editor integration uses `tests/fixtures/editor/input.sii` + `tests/fixtures/editor/golden/`.
 
 ## CI & hooks
 
-GitHub Actions workflows are in `.github/workflows/`: `ci.yml` runs checks for pushes and pull requests, `version.yml` handles version automation, and `tauri-bundle.yml` builds signed release bundles for `v*` tags. Release builds require the `TAURI_SIGNING_PRIVATE_KEY` repository secret. Pre-commit: `cargo check --locked`. Pre-push: `check-types + clippy + fmt + test`. Hooks installed via `pnpm prepare` (auto-runs on `pnpm install`). Run `pnpm prepush` as a manual CI check.
+GitHub Actions workflows are in `.github/workflows/`: `ci.yml` runs checks for pull requests and pushes to `main`, `version.yml` handles version automation, and `tauri-bundle.yml` builds signed release bundles for `v*` tags. Release builds require the `TAURI_SIGNING_PRIVATE_KEY` repository secret. The pre-commit hook runs `cargo check --workspace --all-targets --all-features --locked --tests`; the pre-push hook runs type checks, Clippy, Rust formatting, and Rust tests. Hooks are installed via `pnpm prepare` (auto-runs on `pnpm install`). `pnpm prepush` also runs lint and frontend tests.
