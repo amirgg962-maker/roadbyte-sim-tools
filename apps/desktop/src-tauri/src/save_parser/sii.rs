@@ -43,8 +43,9 @@ impl SiiDocument {
             escaped
         );
         let re = Regex::new(&pattern)?;
-        let replacement = format!("${{1}}{new_value}${{3}}");
-        let new_content = re.replace_all(&self.content, replacement.as_str());
+        let new_content = re.replace_all(&self.content, |captures: &regex::Captures<'_>| {
+            format!("{}{}{}", &captures[1], new_value, &captures[3])
+        });
         let changed = new_content != self.content;
         self.content = new_content.into_owned();
         Ok(changed)
@@ -201,6 +202,17 @@ mod tests {
         doc.set_property("money_account", "200").unwrap();
         // no trailing newline because input had none
         assert_eq!(doc.content(), "  money_account: 200");
+    }
+
+    #[test]
+    fn test_set_property_inserts_dollar_sequences_literally() {
+        for value in ["$1", "${2}", "$$"] {
+            let mut doc = make_doc("name: original");
+
+            doc.set_property("name", value).unwrap();
+
+            assert_eq!(doc.content(), format!("name: {value}"));
+        }
     }
 
     #[test]
