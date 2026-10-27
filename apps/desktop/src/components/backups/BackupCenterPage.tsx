@@ -44,6 +44,7 @@ import { translate } from "../../i18n";
 import { recordActivity } from "../../utils/activity-log";
 
 type PendingAction = { kind: "restore" | "delete"; backup: BackupEntry } | null;
+type BackupVerification = { valid: boolean; fileCount: number; sizeBytes: number; message: string };
 
 interface BackupCenterPageProps {
   profilePaths: string[];
@@ -96,6 +97,12 @@ export function BackupCenterPage({
     error?: string;
   } | null>(null);
   const [comparingPath, setComparingPath] = useState<string | null>(null);
+  const [verification, setVerification] = useState<{
+    path: string;
+    result?: BackupVerification;
+    error?: string;
+  } | null>(null);
+  const [verifyingPath, setVerifyingPath] = useState<string | null>(null);
   // Refs lock synchronously. React state alone is not enough to prevent two rapid
   // clicks from starting the same filesystem operation before the next render.
   const actionLockRef = useRef(false);
@@ -204,6 +211,24 @@ export function BackupCenterPage({
       setTimelineCompare({ path: backup.path, rows: [], error: String(cause) });
     } finally {
       setComparingPath(null);
+    }
+  }
+
+  async function verifyBackup(backup: BackupEntry) {
+    if (verifyingPath) return;
+    setVerifyingPath(backup.path);
+    setVerification({ path: backup.path });
+    try {
+      const result = await invoke<BackupVerification>("verify_backup", {
+        backupPath: backup.path,
+        profilePaths: stableProfilePaths,
+        customPath: customPath || null,
+      });
+      setVerification({ path: backup.path, result });
+    } catch (cause) {
+      setVerification({ path: backup.path, error: String(cause) });
+    } finally {
+      setVerifyingPath(null);
     }
   }
 
@@ -499,6 +524,21 @@ export function BackupCenterPage({
                       </div>
                     </div>
                     <div className="flex flex-wrap items-center gap-2 xl:justify-end">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="h-9 gap-1.5 rounded-lg border-border/60 bg-background/60 text-xs"
+                        onClick={() => void verifyBackup(backup)}
+                        disabled={loading || Boolean(verifyingPath)}
+                      >
+                        {verifyingPath === backup.path ? (
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        ) : (
+                          <ShieldCheck className="h-3.5 w-3.5" />
+                        )}
+                        {t(verifyingPath === backup.path ? "Verifying…" : "Verify & rehearse")}
+                      </Button>
                       {!isProfileBackup && (
                         <Button
                           type="button"
@@ -549,6 +589,28 @@ export function BackupCenterPage({
                       </Button>
                     </div>
                   </div>
+                  {verification?.path === backup.path && (
+                    <div
+                      role="status"
+                      className={`mt-3 rounded-xl border p-3 text-xs ${verification.error ? "border-destructive/25 bg-destructive/[0.06] text-destructive" : "border-emerald-500/25 bg-emerald-500/[0.05] text-emerald-700 dark:text-emerald-300"}`}
+                    >
+                      {verification.error ? (
+                        <>
+                          {t("Backup check failed")}: {verification.error}
+                        </>
+                      ) : verification.result ? (
+                        <>
+                          <p className="font-semibold">{t(verification.result.message)}</p>
+                          <p className="mt-1 text-muted-foreground">
+                            {verification.result.fileCount} {t("files")} ·{" "}
+                            {formatBytes(verification.result.sizeBytes)}
+                          </p>
+                        </>
+                      ) : (
+                        t("Checking backup integrity and a temporary restore copy…")
+                      )}
+                    </div>
+                  )}
                   {timelineCompare?.path === backup.path && (
                     <div className="mt-3 rounded-xl border border-primary/20 bg-primary/[0.035] p-3">
                       <p className="text-xs font-semibold">

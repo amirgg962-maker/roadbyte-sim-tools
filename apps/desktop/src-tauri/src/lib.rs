@@ -28,6 +28,7 @@ pub fn run() {
             commands::manage::clone_save,
             commands::manage::delete_save,
             commands::backups::list_backups,
+            commands::backups::verify_backup,
             commands::backups::restore_backup,
             commands::backups::delete_backup,
             commands::config::list_configs,

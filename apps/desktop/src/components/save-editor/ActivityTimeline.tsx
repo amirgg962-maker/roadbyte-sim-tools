@@ -31,9 +31,9 @@ export function ActivityTimeline({ saveName }: { saveName: string }) {
   const recentEntries = entries.slice(0, 5);
 
   return (
-    <section className="rounded-2xl border border-border/40 bg-card/45 p-4 shadow-sm sm:p-5">
+    <section className="rounded-2xl border border-border/75 bg-card/45 p-4 shadow-sm sm:p-5 dark:border-border/40">
       <div className="flex items-start gap-3">
-        <div className="rounded-xl border border-violet-500/20 bg-violet-500/10 p-2.5 text-violet-300">
+        <div className="rounded-xl border border-violet-500/35 bg-violet-500/10 p-2.5 text-violet-700 dark:border-violet-500/20 dark:text-violet-300">
           <History className="h-4 w-4" />
         </div>
         <div className="min-w-0 flex-1">
@@ -67,7 +67,7 @@ export function ActivityTimeline({ saveName }: { saveName: string }) {
               ))}
             </ol>
           ) : (
-            <p className="mt-4 rounded-lg border border-dashed border-border/45 bg-background/25 p-3 text-xs leading-5 text-muted-foreground">
+            <p className="mt-4 rounded-lg border border-dashed border-border/75 bg-background/25 p-3 text-xs leading-5 text-muted-foreground dark:border-border/45">
               {t("No activity has been recorded for this save yet.")}
             </p>
           )}

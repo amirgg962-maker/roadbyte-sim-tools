@@ -9,7 +9,7 @@ Roadbyte Sim Tools helps you inspect profiles, review save data, edit supported 
 [![Latest release](https://img.shields.io/github/v/release/amirgg962-maker/roadbyte-sim-tools?label=latest%20release)](https://github.com/amirgg962-maker/roadbyte-sim-tools/releases/latest)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
-**Downloads:** [Open the latest release page](https://github.com/amirgg962-maker/roadbyte-sim-tools/releases/latest). Windows users should choose the `.msi` file; macOS and Linux users should choose the package matching their system.
+**Downloads:** [Open the latest release page](https://github.com/amirgg962-maker/roadbyte-sim-tools/releases/latest). Windows users should choose the `.msi` file; Linux users should choose the package matching their system.
 
 For most Windows PCs, choose the file ending in **`.msi`** on the latest release page. The **`.exe`** installer is an alternative. Download the installer only; `.sig` files and `latest.json` are used to verify and deliver updates and are not installers.
 
@@ -20,10 +20,11 @@ For most Windows PCs, choose the file ending in **`.msi`** on the latest release
 - **Profile and save browser:** find profiles and saves and review available progress information.
 - **Save editor:** change supported money and experience values and use supported quick actions.
 - **Save management:** rename, clone, and delete save files.
-- **Configuration editor:** search and edit `config.cfg` with type-aware validation, source-aware guidance, cautious numeric controls, and recovery help.
-- **Automatic backups:** create timestamped backups before supported edits.
+- **Configuration editor:** search and edit `config.cfg` with type-aware validation, source-aware guidance, cautious numeric controls, recovery help, and local presets with a change preview.
+- **Backups:** create timestamped backups, compare save timelines across known metrics, and verify backups with a temporary restore rehearsal that does not replace live game files.
 - **Safer editing:** the app opens in read-only mode; editing must be explicitly enabled.
 - **Compatibility information:** review detected game details and supported-version warnings.
+- **Getting started and support:** follow a reopenable first-run guide and export privacy-safe diagnostics locally; diagnostics are not sent automatically.
 
 Feature availability can depend on the save format and game version. Keep a separate backup of valuable profiles before making changes.
 
@@ -33,7 +34,7 @@ Feature availability can depend on the save format and game version. Keep a sepa
 2. On Windows, download the **`.msi`** installer. Use the **`x64-setup.exe`** installer if MSI does not work for your setup.
 3. Run the installer and follow its prompts.
 
-macOS and Linux packages are also listed on the release page. Select the package that matches your operating system and processor. `.sig` files are signatures, not applications.
+Linux packages are also listed on the release page. Select the package that matches your processor. `.sig` files are signatures, not applications.
 
 Releases include signed updater packages and a public `latest.json` feed. The app can check for updates from **Settings → Software updates**. The current public release artifacts and feed are published; if the in-app update reports an error or the displayed version does not change after restarting, install the latest version manually from the Releases page.
 

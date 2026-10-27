@@ -1,4 +1,4 @@
-use crate::core::backups::{self, BackupActionResult, BackupEntry};
+use crate::core::backups::{self, BackupActionResult, BackupEntry, BackupVerificationResult};
 
 #[tauri::command]
 pub fn list_backups(
@@ -6,6 +6,15 @@ pub fn list_backups(
     custom_path: Option<String>,
 ) -> Result<Vec<BackupEntry>, String> {
     backups::list_backups(&profile_paths, custom_path.as_deref())
+}
+
+#[tauri::command]
+pub fn verify_backup(
+    backup_path: String,
+    profile_paths: Vec<String>,
+    custom_path: Option<String>,
+) -> Result<BackupVerificationResult, String> {
+    backups::verify_backup(&backup_path, &profile_paths, custom_path.as_deref())
 }
 
 #[tauri::command]

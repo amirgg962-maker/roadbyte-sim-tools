@@ -10,12 +10,13 @@ import {
   Button,
   useTheme,
 } from "ui";
-import { Sun, Moon, Monitor, ExternalLink, Folder, Settings, Shield } from "lucide-react";
+import { Sun, Moon, Monitor, ExternalLink, Folder, Settings, Shield, Download, Compass } from "lucide-react";
 import { useSettingsStore } from "../../stores/settings";
 import { translate } from "../../i18n";
 import { useEffect } from "react";
 import { GamePathSelector } from "../save-editor/GamePathSelector";
 import { UpdaterSettingsSection } from "./UpdaterSettingsSection";
+import { buildRedactedDiagnostics } from "../../utils/diagnostics-export.js";
 
 interface AppVersionInfo {
   app_version: string;
@@ -26,6 +27,7 @@ interface AppVersionInfo {
 
 interface SettingsDialogProps {
   appInfo: AppVersionInfo | null;
+  onOpenSetupGuide: () => void;
 }
 
 const THEME_OPTIONS = [
@@ -34,7 +36,7 @@ const THEME_OPTIONS = [
   { value: "system", label: "System", icon: Monitor },
 ] as const;
 
-export function SettingsDialog({ appInfo }: SettingsDialogProps) {
+export function SettingsDialog({ appInfo, onOpenSetupGuide }: SettingsDialogProps) {
   const { theme, setTheme } = useTheme();
   const {
     readOnly,
@@ -45,10 +47,30 @@ export function SettingsDialog({ appInfo }: SettingsDialogProps) {
     setIsSettingsOpen,
     language,
     setLanguage,
+    hasCompletedOnboarding,
     settingsTarget,
     clearSettingsTarget,
   } = useSettingsStore();
   const t = (text: string) => translate(language, text);
+
+  function exportDiagnostics() {
+    const report = buildRedactedDiagnostics({
+      appVersion: appInfo?.app_version,
+      platform: navigator.platform,
+      language,
+      gameVersion: appInfo?.game_version,
+      testedGameVersion: appInfo?.tested_game_version,
+      customDirectoryConfigured: Boolean(customGamePath),
+      readOnly,
+    });
+    const blob = new Blob([JSON.stringify(report, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = "roadbyte-diagnostics.json";
+    anchor.click();
+    window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
 
   useEffect(() => {
     if (!isSettingsOpen || settingsTarget !== "game-directory") return;
@@ -186,6 +208,17 @@ export function SettingsDialog({ appInfo }: SettingsDialogProps) {
               {t("About Roadbyte Sim Tools")}
             </h4>
             <div className="space-y-4 text-sm">
+              <div className="flex flex-wrap gap-2">
+                <Button type="button" variant="outline" size="sm" onClick={onOpenSetupGuide}>
+                  <Compass className="mr-2 h-4 w-4" /> {t(hasCompletedOnboarding ? "Open setup guide" : "Continue setup guide")}
+                </Button>
+                <Button type="button" variant="outline" size="sm" onClick={exportDiagnostics}>
+                  <Download className="mr-2 h-4 w-4" /> {t("Export privacy-safe diagnostics")}
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                {t("The diagnostic file is created on this device and is not sent automatically.")}
+              </p>
               <div className="relative overflow-hidden rounded-xl border border-primary/30 bg-gradient-to-br from-primary/10 via-card to-card p-4">
                 <div
                   aria-hidden="true"

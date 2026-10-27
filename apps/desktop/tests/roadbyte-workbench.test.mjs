@@ -18,6 +18,19 @@ test("save timeline highlights changed career and fleet metrics", () => {
   ]);
 });
 
+test("backup timeline includes additional numeric career metrics when available", () => {
+  assert.deepEqual(
+    summarizeSaveDelta(
+      { total_fuel_litres: 10, visited_cities_count: 2, achieved_feats: 1 },
+      { total_fuel_litres: 18, visited_cities_count: 4, achieved_feats: 1 },
+    ),
+    [
+      { key: "total_fuel_litres", before: 10, after: 18, delta: 8 },
+      { key: "visited_cities_count", before: 2, after: 4, delta: 2 },
+    ],
+  );
+});
+
 test("profile comparison leaves unknown values explicitly unavailable", () => {
   assert.deepEqual(compareSaveSnapshots({ money: 100, xp: null }, { money: 80, xp: 5 }), [
     { key: "money", left: 100, right: 80, delta: -20 },

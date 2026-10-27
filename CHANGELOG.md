@@ -1,5 +1,20 @@
 # Changelog
 
+## roadbyte-sim-tools@0.3.1 (2026-10-27)
+
+### Highlights
+
+- Save local Config presets with a preview; sensitive values and file paths are excluded, and applying a preset changes only the editor draft until the user follows the normal save flow.
+- Compare backup timelines across 11 known numeric save metrics, including distance, fuel, visited cities, and discoveries.
+- Verify a save or profile backup and rehearse copying it in a temporary directory without replacing live game files. Binary BSII saves remain unsupported.
+- Add a first-run guide that can be reopened from Settings and explains the safe setup path.
+- Export a local diagnostics JSON with app and environment details while excluding filesystem paths, profile names, save/config contents, and account identifiers; it is never sent automatically.
+- Improve light-theme contrast and single-truck layout readability.
+
+### Verification
+
+- Release checks and the signed artifact workflow are run for Windows and Linux. macOS installers are not built for this release.
+
 ## roadbyte-sim-tools@0.3.0 (2026-10-26)
 
 ### Highlights

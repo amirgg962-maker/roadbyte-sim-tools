@@ -10,6 +10,7 @@ interface SettingsState {
   lastTab: TabId;
   customGamePath: string;
   language: AppLanguage;
+  hasCompletedOnboarding: boolean;
   isSettingsOpen: boolean;
   settingsTarget: "game-directory" | null;
 
@@ -17,6 +18,7 @@ interface SettingsState {
   setLastTab: (tab: TabId) => void;
   setCustomGamePath: (path: string) => void;
   setLanguage: (language: AppLanguage) => void;
+  setHasCompletedOnboarding: (value: boolean) => void;
   setIsSettingsOpen: (open: boolean) => void;
   openGamePathSettings: () => void;
   clearSettingsTarget: () => void;
@@ -29,6 +31,7 @@ export const useSettingsStore = create<SettingsState>()(
       lastTab: "saves",
       customGamePath: "",
       language: "en",
+      hasCompletedOnboarding: false,
       isSettingsOpen: false,
       settingsTarget: null,
 
@@ -36,6 +39,7 @@ export const useSettingsStore = create<SettingsState>()(
       setLastTab: (lastTab) => set({ lastTab }),
       setCustomGamePath: (customGamePath) => set({ customGamePath }),
       setLanguage: (language) => set({ language }),
+      setHasCompletedOnboarding: (hasCompletedOnboarding) => set({ hasCompletedOnboarding }),
       setIsSettingsOpen: (isSettingsOpen) => set({ isSettingsOpen }),
       openGamePathSettings: () => set({ isSettingsOpen: true, settingsTarget: "game-directory" }),
       clearSettingsTarget: () => set({ settingsTarget: null }),
@@ -48,6 +52,7 @@ export const useSettingsStore = create<SettingsState>()(
         lastTab: state.lastTab,
         customGamePath: state.customGamePath,
         language: state.language,
+        hasCompletedOnboarding: state.hasCompletedOnboarding,
       }),
     },
   ),
