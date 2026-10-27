@@ -508,6 +508,49 @@ const fa: Record<string, string> = {
     "مقادیر استهلاک پشتیبانی‌شدهٔ کامیون، از جمله استهلاک غیرقابل‌تعمیر ذخیره‌شده در فایل، روی ۰٪ قرار می‌گیرند.",
   "Sets each owned truck fuel value to full (100%).":
     "مقدار سوخت هر کامیون متعلق به شما را کامل (۱۰۰٪) می‌کند.",
+  "Config profiles": "پروفایل‌های تنظیمات",
+  "Save and preview local setting presets": "ذخیره و پیش‌نمایش الگوهای محلی تنظیمات",
+  "Profiles stay on this device. Applying one changes only the editor draft; review and save it through the normal backup-protected flow.":
+    "پروفایل‌ها فقط روی همین دستگاه می‌مانند. اعمال آن‌ها فقط پیش‌نویس ویرایشگر را تغییر می‌دهد؛ تغییرها را در روند معمول همراه با پشتیبان بررسی و ذخیره کنید.",
+  "Profiles stay on this device. Sensitive values and file paths are excluded. Applying one changes only the editor draft; review and save it through the normal backup-protected flow.":
+    "پروفایل‌ها فقط روی همین دستگاه می‌مانند و مقادیر حساس و مسیر فایل‌ها در آن‌ها ذخیره نمی‌شود. اعمال پروفایل فقط پیش‌نویس ویرایشگر را تغییر می‌دهد؛ تغییرها را در روند معمول همراه با پشتیبان بررسی و ذخیره کنید.",
+  "Preset name": "نام الگو",
+  "Save current as preset": "ذخیرهٔ وضعیت فعلی به‌عنوان الگو",
+  "Saved presets are for a different game config and are hidden here.":
+    "الگوهای ذخیره‌شده برای تنظیمات بازی دیگری هستند و اینجا نمایش داده نمی‌شوند.",
+  "Choose a config preset": "انتخاب الگوی تنظیمات",
+  "Apply to editor draft": "اعمال در پیش‌نویس ویرایشگر",
+  "Delete preset": "حذف الگو",
+  Preview: "پیش‌نمایش",
+  "settings would change": "تنظیم تغییر می‌کند",
+  "This preset already matches the current config.": "این الگو با تنظیمات فعلی تفاوتی ندارد.",
+  "preset settings are absent from this config and will be skipped.":
+    "تنظیم این الگو در فایل فعلی وجود ندارد و نادیده گرفته می‌شود.",
+  "Could not save this local config profile.": "ذخیرهٔ محلی پروفایل تنظیمات ممکن نشد.",
+  "Preset loaded into the editor. Review the changes before saving.":
+    "الگو در ویرایشگر بارگذاری شد. پیش از ذخیره، تغییرها را بررسی کنید.",
+  "Verify & rehearse": "راستی‌آزمایی و آزمایش",
+  "Verifying…": "در حال راستی‌آزمایی…",
+  "Backup check failed": "راستی‌آزمایی پشتیبان ناموفق بود",
+  "Checking backup integrity and a temporary restore copy…": "در حال بررسی سلامت پشتیبان و کپی موقت بازیابی…",
+  "Backup passed integrity checks and restore rehearsal. No game data was changed.":
+    "پشتیبان از بررسی سلامت و آزمایش بازیابی گذشت. هیچ داده‌ای از بازی تغییر نکرد.",
+  "Welcome to Roadbyte": "به Roadbyte خوش آمدید",
+  "A short, safe setup guide. Nothing is changed in your game files during these steps.":
+    "راهنمایی کوتاه و امن برای شروع. در این مراحل فایل‌های بازی تغییر نمی‌کنند.",
+  "Confirm the game folder if Roadbyte did not detect it automatically.":
+    "اگر Roadbyte پوشهٔ بازی را خودکار پیدا نکرد، مسیر آن را مشخص کنید.",
+  "Open Backup Center to inspect available backups and verify one before restoring.":
+    "برای بررسی پشتیبان‌های موجود و راستی‌آزمایی پیش از بازیابی، مرکز پشتیبان‌گیری را باز کنید.",
+  "Choose a save to inspect it. Read Only is enabled by default; edits require an explicit save confirmation.":
+    "یک فایل ذخیره انتخاب کنید تا بررسی شود. حالت فقط‌خواندنی پیش‌فرض روشن است و ذخیرهٔ تغییرها نیاز به تأیید دارد.",
+  Later: "بعداً",
+  "Set up game folder": "تنظیم مسیر بازی",
+  "Open setup guide": "باز کردن راهنمای شروع",
+  "Continue setup guide": "ادامهٔ راهنمای شروع",
+  "Export privacy-safe diagnostics": "خروجی عیب‌یابیِ پاک‌سازی‌شده",
+  "The diagnostic file is created on this device and is not sent automatically.":
+    "فایل عیب‌یابی روی همین دستگاه ساخته می‌شود و خودکار ارسال نخواهد شد.",
   "A full save backup is created before changes are written.":
     "پیش از نوشتن تغییرات، نسخهٔ کامل پشتیبان از ذخیره ساخته می‌شود.",
   unknown: "نامشخص",

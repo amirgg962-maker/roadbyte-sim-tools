@@ -30,6 +30,15 @@ pub struct BackupActionResult {
     pub safety_backup: Option<String>,
 }
 
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct BackupVerificationResult {
+    pub valid: bool,
+    pub file_count: u64,
+    pub size_bytes: u64,
+    pub message: String,
+}
+
 #[derive(Debug, Clone)]
 struct BackupContext {
     profile_paths: Vec<PathBuf>,
@@ -343,6 +352,60 @@ fn resolve_backup(
     }
 
     Err("This folder is not a recognized Roadbyte save or profile backup. Refresh the Backup Center and try again.".to_string())
+}
+
+/// Read-only integrity check plus a restore rehearsal against a temporary copy.
+/// It never creates or replaces a game save/profile destination.
+pub fn verify_backup(
+    backup_path: &str,
+    profile_paths: &[String],
+    custom_path: Option<&str>,
+) -> Result<BackupVerificationResult, String> {
+    let resolved = resolve_backup(backup_path, profile_paths, custom_path)?;
+    reject_binary_marker(&resolved.backup_path, resolved.kind)?;
+    validate_backup_for_restore(&resolved.backup_path, resolved.kind)?;
+
+    let (size_bytes, file_count) = directory_stats(&resolved.backup_path)?;
+    let temporary = tempfile::tempdir()
+        .map_err(|error| format!("Could not create a temporary verification folder: {error}"))?;
+    let rehearsal = temporary.path().join("restore-rehearsal");
+    copy_dir_all(&resolved.backup_path, &rehearsal)?;
+    reject_binary_marker(&rehearsal, resolved.kind)?;
+    validate_backup_for_restore(&rehearsal, resolved.kind)?;
+
+    Ok(BackupVerificationResult {
+        valid: true,
+        file_count,
+        size_bytes,
+        message: "Backup passed integrity checks and restore rehearsal. No game data was changed."
+            .to_string(),
+    })
+}
+
+fn reject_binary_marker(path: &Path, kind: BackupKind) -> Result<(), String> {
+    let marker = match kind {
+        BackupKind::Save => "game.sii",
+        BackupKind::Profile => "profile.sii",
+    };
+    let bytes = fs::read(path.join(marker))
+        .map_err(|error| format!("Could not read backup marker {marker}: {error}"))?;
+    if bytes.starts_with(b"BSII") {
+        return Err(format!(
+            "Backup verification does not support the binary BSII format in {marker}. No game data was changed."
+        ));
+    }
+    if bytes.starts_with(b"ScsC")
+        && decompress_save(&bytes).err().is_some_and(|error| {
+            error
+                .to_string()
+                .contains("Binary format BSII not supported")
+        })
+    {
+        return Err(format!(
+            "Backup verification does not support a ScsC container with a binary BSII payload in {marker}. No game data was changed."
+        ));
+    }
+    Ok(())
 }
 
 fn canonical_directory(path: &Path) -> Option<PathBuf> {
@@ -874,6 +937,85 @@ mod tests {
         assert_eq!(entry.name, "autosave");
         assert_eq!(entry.size_bytes, "backup-data".len() as u64);
         assert_eq!(normalize(Path::new(&entry.path)), expected_backup);
+    }
+
+    #[test]
+    fn verify_backup_checks_temporary_copy_without_touching_current_save() {
+        let temp = tempfile::tempdir().unwrap();
+        let profile = temp.path().join("profiles").join("p1");
+        let current = make_save(&profile, "autosave", "SiiNunit\n{\n current: true\n}\n");
+        let original = fs::read(current.join("game.sii")).unwrap();
+        let backup = make_backup(
+            &profile.join("roadbyte-backups"),
+            "20261022_120000_000",
+            "autosave",
+            "game.sii",
+            "SiiNunit\n{\n backup: true\n}\n",
+        );
+        let backup_before = fs::read(backup.join("game.sii")).unwrap();
+
+        let result = verify_backup(
+            backup.to_str().unwrap(),
+            &[profile.to_string_lossy().to_string()],
+            Some(temp.path().to_str().unwrap()),
+        )
+        .unwrap();
+
+        assert!(result.valid);
+        assert_eq!(result.file_count, 1);
+        assert_eq!(fs::read(current.join("game.sii")).unwrap(), original);
+        assert_eq!(fs::read(backup.join("game.sii")).unwrap(), backup_before);
+        assert!(!backup.join("restore-rehearsal").exists());
+    }
+
+    #[test]
+    fn verify_backup_does_not_accept_binary_bsii() {
+        let temp = tempfile::tempdir().unwrap();
+        let profile = temp.path().join("profiles").join("p1");
+        fs::create_dir_all(profile.join("save")).unwrap();
+        let backup = make_backup(
+            &profile.join("roadbyte-backups"),
+            "20261022_120000_000",
+            "autosave",
+            "game.sii",
+            "BSII",
+        );
+        fs::write(backup.join("game.sii"), b"BSII\0\0\0\0").unwrap();
+
+        let result = verify_backup(
+            backup.to_str().unwrap(),
+            &[profile.to_string_lossy().to_string()],
+            Some(temp.path().to_str().unwrap()),
+        );
+
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn verify_backup_does_not_accept_scsc_wrapped_bsii() {
+        let temp = tempfile::tempdir().unwrap();
+        let profile = temp.path().join("profiles").join("p1");
+        fs::create_dir_all(profile.join("save")).unwrap();
+        let binary = b"BSII\0\0\0\0";
+        let packed =
+            crate::save_parser::compression::compress_save(std::str::from_utf8(binary).unwrap())
+                .unwrap();
+        let backup = make_backup(
+            &profile.join("roadbyte-backups"),
+            "20261022_120000_000",
+            "autosave",
+            "game.sii",
+            "placeholder",
+        );
+        fs::write(backup.join("game.sii"), packed).unwrap();
+
+        let result = verify_backup(
+            backup.to_str().unwrap(),
+            &[profile.to_string_lossy().to_string()],
+            Some(temp.path().to_str().unwrap()),
+        );
+
+        assert!(result.is_err());
     }
 
     #[test]

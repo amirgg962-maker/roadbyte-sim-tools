@@ -19,6 +19,7 @@ import { StatusBar } from "./components/StatusBar";
 import { SettingsDialog } from "./components/settings/SettingsDialog";
 import { CommandPalette } from "./components/CommandPalette";
 import { KeyboardShortcutsDialog } from "./components/KeyboardShortcutsDialog";
+import { FirstRunGuide } from "./components/settings/FirstRunGuide";
 import { useSettingsStore } from "./stores/settings";
 import { useSaveEditorStore } from "./stores/save-editor";
 import type { WorkspaceTab } from "./stores/save-editor";
@@ -50,7 +51,14 @@ interface AppVersionInfo {
 }
 
 function App() {
-  const { readOnly, customGamePath, setIsSettingsOpen, language } = useSettingsStore();
+  const {
+    readOnly,
+    customGamePath,
+    setIsSettingsOpen,
+    language,
+    hasCompletedOnboarding,
+    setHasCompletedOnboarding,
+  } = useSettingsStore();
   const {
     profiles,
     saves,
@@ -77,6 +85,8 @@ function App() {
   const [hasUnsavedConfigChanges, setHasUnsavedConfigChanges] = useState(false);
   const [isConfigSaving, setIsConfigSaving] = useState(false);
   const [isUnsavedConfigDialogOpen, setIsUnsavedConfigDialogOpen] = useState(false);
+  const [onboardingDismissed, setOnboardingDismissed] = useState(false);
+  const [onboardingRequested, setOnboardingRequested] = useState(false);
   const pendingConfigNavigationRef = useRef<(() => void) | null>(null);
   const savesRequestIdRef = useRef(0);
   const hasUnsavedConfigChangesRef = useRef(false);
@@ -438,7 +448,21 @@ function App() {
       }
       status={<StatusBar message={status} />}
     >
-      <SettingsDialog appInfo={appInfo} />
+      <SettingsDialog appInfo={appInfo} onOpenSetupGuide={() => setOnboardingRequested(true)} />
+      <FirstRunGuide
+        open={onboardingRequested || (!hasCompletedOnboarding && !onboardingDismissed)}
+        onLater={() => {
+          setOnboardingDismissed(true);
+          setOnboardingRequested(false);
+        }}
+        onComplete={() => {
+          setHasCompletedOnboarding(true);
+          setOnboardingDismissed(true);
+          setOnboardingRequested(false);
+        }}
+        onOpenGameSettings={() => setIsSettingsOpen(true)}
+        onGoTo={onSelectWorkspace}
+      />
       <CommandPalette
         open={isCommandPaletteOpen}
         onOpenChange={setIsCommandPaletteOpen}

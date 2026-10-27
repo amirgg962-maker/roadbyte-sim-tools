@@ -5,6 +5,11 @@ const CAREER_FIELDS = [
   "trucks_count",
   "drivers_count",
   "total_distance_km",
+  "total_fuel_litres",
+  "visited_cities_count",
+  "achieved_feats",
+  "discovered_items",
+  "save_version",
 ];
 
 export function summarizeSaveDelta(before, after) {

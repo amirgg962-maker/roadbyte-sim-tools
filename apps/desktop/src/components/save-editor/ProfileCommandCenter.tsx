@@ -25,10 +25,10 @@ export function ProfileCommandCenter({
         : t("Some checks need attention");
   const statusStyle =
     health.level === "good"
-      ? "border-emerald-500/25 bg-emerald-500/10 text-emerald-300"
+      ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-800 dark:border-emerald-500/25 dark:text-emerald-300"
       : health.level === "warning"
-        ? "border-amber-500/25 bg-amber-500/10 text-amber-200"
-        : "border-sky-500/25 bg-sky-500/10 text-sky-200";
+        ? "border-amber-500/40 bg-amber-500/10 text-amber-800 dark:border-amber-500/25 dark:text-amber-200"
+        : "border-sky-500/40 bg-sky-500/10 text-sky-800 dark:border-sky-500/25 dark:text-sky-200";
 
   return (
     <section className="relative overflow-hidden rounded-2xl border border-primary/20 bg-gradient-to-br from-card via-card/95 to-primary/[0.07] p-4 shadow-sm sm:p-5">

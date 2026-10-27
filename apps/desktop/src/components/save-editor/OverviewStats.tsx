@@ -40,32 +40,32 @@ const ACCENTS: Record<Accent, { icon: string; iconBg: string; glow: string; bar:
     bar: "bg-primary",
   },
   emerald: {
-    icon: "text-emerald-400",
-    iconBg: "border-emerald-500/20 bg-emerald-500/10",
+    icon: "text-emerald-700 dark:text-emerald-400",
+    iconBg: "border-emerald-500/35 bg-emerald-500/10 dark:border-emerald-500/20",
     glow: "from-emerald-500/[0.08]",
     bar: "bg-emerald-400",
   },
   amber: {
-    icon: "text-amber-400",
-    iconBg: "border-amber-500/20 bg-amber-500/10",
+    icon: "text-amber-700 dark:text-amber-400",
+    iconBg: "border-amber-500/35 bg-amber-500/10 dark:border-amber-500/20",
     glow: "from-amber-500/[0.08]",
     bar: "bg-amber-400",
   },
   cyan: {
-    icon: "text-cyan-400",
-    iconBg: "border-cyan-500/20 bg-cyan-500/10",
+    icon: "text-cyan-700 dark:text-cyan-400",
+    iconBg: "border-cyan-500/35 bg-cyan-500/10 dark:border-cyan-500/20",
     glow: "from-cyan-500/[0.08]",
     bar: "bg-cyan-400",
   },
   violet: {
-    icon: "text-violet-400",
-    iconBg: "border-violet-500/20 bg-violet-500/10",
+    icon: "text-violet-700 dark:text-violet-400",
+    iconBg: "border-violet-500/35 bg-violet-500/10 dark:border-violet-500/20",
     glow: "from-violet-500/[0.08]",
     bar: "bg-violet-400",
   },
   blue: {
-    icon: "text-sky-400",
-    iconBg: "border-sky-500/20 bg-sky-500/10",
+    icon: "text-sky-700 dark:text-sky-400",
+    iconBg: "border-sky-500/35 bg-sky-500/10 dark:border-sky-500/20",
     glow: "from-sky-500/8",
     bar: "bg-sky-400",
   },
@@ -131,7 +131,7 @@ function MetricCard({
 }) {
   const style = ACCENTS[accent];
   return (
-    <article className="group relative min-w-0 overflow-hidden rounded-2xl border border-border/45 bg-card/55 p-4 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/30 hover:bg-card/75">
+    <article className="group relative min-w-0 overflow-hidden rounded-2xl border border-border/75 bg-card/55 p-4 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/45 hover:bg-card/75 dark:border-border/45 dark:hover:border-primary/30">
       <div
         aria-hidden="true"
         className={`pointer-events-none absolute inset-0 bg-gradient-to-br ${style.glow} via-transparent to-transparent opacity-80`}
@@ -176,7 +176,7 @@ function ActivityTile({
 }) {
   const style = ACCENTS[accent];
   return (
-    <div className="flex min-w-0 items-start gap-3 rounded-xl border border-border/35 bg-background/35 p-3.5 transition-colors hover:border-border/70 hover:bg-background/55">
+    <div className="flex min-w-0 items-start gap-3 rounded-xl border border-border/70 bg-background/35 p-3.5 transition-colors hover:border-border hover:bg-background/55 dark:border-border/35 dark:hover:border-border/70">
       <div className={`mt-0.5 rounded-lg p-2 ${style.iconBg} ${style.icon}`}>
         <Icon className="h-4 w-4" strokeWidth={1.9} />
       </div>
@@ -237,15 +237,15 @@ export function OverviewStats({ saveData, saveName }: OverviewStatsProps & { sav
       <ProfileCommandCenter saveData={saveData} saveName={saveName} />
       {saveData.compatibility_warning && (
         <div className="flex items-start gap-3 rounded-2xl border border-amber-500/25 bg-amber-500/[0.07] p-4 shadow-sm">
-          <div className="mt-0.5 rounded-lg border border-amber-500/20 bg-amber-500/10 p-2 text-amber-400">
+          <div className="mt-0.5 rounded-lg border border-amber-500/35 bg-amber-500/10 p-2 text-amber-700 dark:border-amber-500/20 dark:text-amber-400">
             <AlertTriangle className="h-4 w-4" />
           </div>
           <div className="min-w-0 flex-1">
-            <p className="text-xs font-semibold text-amber-300">
+            <p className="text-xs font-semibold text-amber-800 dark:text-amber-300">
               {language === "fa" ? "هشدار سازگاری · " : "Compatibility notice · "}
               {versionLabel}
             </p>
-            <p className="mt-1 text-xs leading-relaxed text-amber-200/80">
+            <p className="mt-1 text-xs leading-relaxed text-amber-900/85 dark:text-amber-200/80">
               {saveData.compatibility_warning}
             </p>
           </div>
@@ -347,10 +347,10 @@ export function OverviewStats({ saveData, saveName }: OverviewStatsProps & { sav
       </section>
 
       <div className="grid grid-cols-1 gap-4 2xl:grid-cols-[minmax(0,1.45fr)_minmax(280px,0.85fr)]">
-        <section className="rounded-2xl border border-border/40 bg-card/45 p-4 shadow-sm backdrop-blur-xl sm:p-5">
+        <section className="rounded-2xl border border-border/75 bg-card/45 p-4 shadow-sm backdrop-blur-xl sm:p-5 dark:border-border/40">
           <div className="mb-4 flex items-start justify-between gap-3">
             <div className="flex items-start gap-3">
-              <div className="rounded-xl border border-cyan-500/20 bg-cyan-500/10 p-2.5 text-cyan-400">
+              <div className="rounded-xl border border-cyan-500/35 bg-cyan-500/10 p-2.5 text-cyan-700 dark:border-cyan-500/20 dark:text-cyan-400">
                 <Activity className="h-4 w-4" />
               </div>
               <div>
@@ -420,9 +420,12 @@ export function OverviewStats({ saveData, saveName }: OverviewStatsProps & { sav
               accent="blue"
             />
           </div>
+          <div className="mt-4 border-t border-border/35 pt-4">
+            <ActivityTimeline saveName={saveName} />
+          </div>
         </section>
 
-        <section className="rounded-2xl border border-border/40 bg-card/45 p-4 shadow-sm backdrop-blur-xl sm:p-5">
+        <section className="rounded-2xl border border-border/75 bg-card/45 p-4 shadow-sm backdrop-blur-xl sm:p-5 dark:border-border/40">
           <div className="mb-2 flex items-start gap-3">
             <div className="rounded-xl border border-primary/20 bg-primary/10 p-2.5 text-primary">
               <FileText className="h-4 w-4" />
@@ -476,19 +479,18 @@ export function OverviewStats({ saveData, saveName }: OverviewStatsProps & { sav
               icon={MapPin}
             />
           </div>
-          <div className="mt-4 flex items-start gap-2.5 rounded-xl border border-emerald-500/15 bg-emerald-500/[0.05] p-3">
-            <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-emerald-400" />
+          <div className="mt-4 flex items-start gap-2.5 rounded-xl border border-emerald-500/30 bg-emerald-500/[0.05] p-3 dark:border-emerald-500/15">
+            <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-emerald-700 dark:text-emerald-400" />
             <div>
-              <p className="text-xs font-medium text-emerald-300">{t("Save data is available")}</p>
+              <p className="text-xs font-medium text-emerald-700 dark:text-emerald-300">
+                {t("Save data is available")}
+              </p>
               <p className="mt-0.5 text-[11px] leading-relaxed text-muted-foreground">
                 {language === "fa"
                   ? "پیش از تغییر این فایل، اطلاعات بالا را بررسی کنید."
                   : "Review the details above before making any changes to this file."}
               </p>
             </div>
-          </div>
-          <div className="mt-4 border-t border-border/35 pt-4">
-            <ActivityTimeline saveName={saveName} />
           </div>
         </section>
       </div>

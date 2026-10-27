@@ -30,10 +30,17 @@ function fuelTone(percent: number): string {
 }
 
 function wearTone(percent: number): { bar: string; text: string; label: string } {
-  if (percent < 5) return { bar: "bg-emerald-400", text: "text-emerald-400", label: "Excellent" };
-  if (percent < 20) return { bar: "bg-lime-400", text: "text-lime-400", label: "Good" };
-  if (percent < 45) return { bar: "bg-amber-400", text: "text-amber-400", label: "Monitor" };
-  return { bar: "bg-red-400", text: "text-red-400", label: "High wear" };
+  if (percent < 5)
+    return {
+      bar: "bg-emerald-400",
+      text: "text-emerald-700 dark:text-emerald-400",
+      label: "Excellent",
+    };
+  if (percent < 20)
+    return { bar: "bg-lime-400", text: "text-lime-700 dark:text-lime-400", label: "Good" };
+  if (percent < 45)
+    return { bar: "bg-amber-400", text: "text-amber-700 dark:text-amber-400", label: "Monitor" };
+  return { bar: "bg-red-400", text: "text-red-700 dark:text-red-400", label: "High wear" };
 }
 
 function ProgressLine({
@@ -95,12 +102,12 @@ function TruckCard({ truck }: { truck: TruckInfo }) {
   const hasWearData = wearItems.some((item) => item.value != null);
 
   return (
-    <article className="group relative min-w-0 overflow-hidden rounded-2xl border border-border/45 bg-card/55 shadow-sm transition-all duration-200 hover:border-primary/25 hover:bg-card/75">
+    <article className="group relative min-w-0 overflow-hidden rounded-2xl border border-border/75 bg-card/55 shadow-sm transition-all duration-200 hover:border-primary/45 hover:bg-card/75 dark:border-border/45 dark:hover:border-primary/25">
       <div
         aria-hidden="true"
         className="pointer-events-none absolute -right-10 -top-16 h-40 w-40 rounded-full bg-primary/[0.06] blur-3xl transition-opacity group-hover:opacity-100"
       />
-      <div className="relative flex items-start justify-between gap-3 border-b border-border/35 p-4 sm:p-5">
+      <div className="relative flex items-start justify-between gap-3 border-b border-border/65 p-4 sm:p-5 dark:border-border/35">
         <div className="flex min-w-0 items-center gap-3">
           <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-primary/20 bg-primary/10 text-primary">
             <Truck className="h-5 w-5" strokeWidth={1.8} />
@@ -126,16 +133,16 @@ function TruckCard({ truck }: { truck: TruckInfo }) {
       </div>
 
       <div className="relative grid gap-4 p-4 sm:p-5 md:grid-cols-[0.85fr_1.15fr]">
-        <div className="space-y-4 rounded-xl border border-border/35 bg-background/30 p-3.5">
+        <div className="space-y-4 rounded-xl border border-border/65 bg-background/30 p-3.5 dark:border-border/35">
           <div className="flex items-center gap-2">
-            <Fuel className="h-4 w-4 text-cyan-400" />
+            <Fuel className="h-4 w-4 text-cyan-700 dark:text-cyan-400" />
             <p className="text-xs font-semibold text-foreground">{t("Fuel level")}</p>
             <span className="ml-auto font-mono text-sm font-semibold text-foreground tabular-nums">
               {fuelPercent == null ? "—" : `${Math.round(fuelPercent)}%`}
             </span>
           </div>
           <ProgressLine label={t("Tank remaining")} value={truck.fuel_relative} mode="fuel" />
-          <div className="flex items-start gap-2 border-t border-border/35 pt-3">
+          <div className="flex items-start gap-2 border-t border-border/65 pt-3 dark:border-border/35">
             <Route className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground" />
             <p className="text-[11px] leading-relaxed text-muted-foreground">
               {truck.odometer_km == null
@@ -152,7 +159,7 @@ function TruckCard({ truck }: { truck: TruckInfo }) {
               <p className="text-xs font-semibold text-foreground">{t("Vehicle condition")}</p>
             </div>
             {hasWearData ? (
-              <span className="rounded-md border border-border/40 bg-background/40 px-2 py-1 text-[10px] text-muted-foreground">
+              <span className="rounded-md border border-border/75 bg-background/40 px-2 py-1 text-[10px] text-muted-foreground dark:border-border/40">
                 {t("Wear by system")}
               </span>
             ) : (
@@ -262,8 +269,8 @@ export function TrucksGrid({ trucks }: { trucks: TruckInfo[] }) {
             }
             emptyLabel={t("Wear data unavailable")}
           />
-          <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/[0.045] p-3.5">
-            <div className="flex items-center justify-between gap-2 text-emerald-300">
+          <div className="rounded-xl border border-emerald-500/35 bg-emerald-500/[0.045] p-3.5 dark:border-emerald-500/20">
+            <div className="flex items-center justify-between gap-2 text-emerald-800 dark:text-emerald-300">
               <span className="text-xs font-medium">{t("Fleet in good shape")}</span>
               <Truck className="h-4 w-4" />
             </div>
@@ -295,7 +302,7 @@ export function TrucksGrid({ trucks }: { trucks: TruckInfo[] }) {
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 gap-3.5 2xl:grid-cols-2">
+        <div className={`grid grid-cols-1 gap-3.5 ${trucks.length > 1 ? "2xl:grid-cols-2" : ""}`}>
           {trucks.map((truck) => (
             <TruckCard key={truck.index} truck={truck} />
           ))}
@@ -322,15 +329,15 @@ function FleetMetric({
 }) {
   const toneClass =
     tone === "cyan"
-      ? "text-cyan-300"
+      ? "text-cyan-800 dark:text-cyan-300"
       : tone === "red"
-        ? "text-red-300"
+        ? "text-red-700 dark:text-red-300"
         : tone === "green"
-          ? "text-emerald-300"
-          : "text-amber-300";
+          ? "text-emerald-800 dark:text-emerald-300"
+          : "text-amber-800 dark:text-amber-300";
   const width = value == null ? 0 : Math.min(100, Math.max(0, value));
   return (
-    <div className="rounded-xl border border-border/40 bg-card/45 p-3.5">
+    <div className="rounded-xl border border-border/75 bg-card/45 p-3.5 dark:border-border/40">
       <div className={`flex items-center justify-between gap-2 ${toneClass}`}>
         <span className="text-xs font-medium text-muted-foreground">{label}</span>
         {icon}

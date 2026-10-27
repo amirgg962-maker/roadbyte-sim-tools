@@ -5,9 +5,11 @@ import { translate } from "../../i18n";
 import { evaluateSaveHealth, type HealthLevel } from "./save-health";
 
 const LEVEL_STYLES: Record<HealthLevel, string> = {
-  good: "border-emerald-500/20 bg-emerald-500/[0.05] text-emerald-300",
-  review: "border-sky-500/20 bg-sky-500/[0.05] text-sky-200",
-  warning: "border-amber-500/25 bg-amber-500/[0.06] text-amber-200",
+  good: "border-emerald-500/35 bg-emerald-500/[0.05] text-emerald-800 dark:border-emerald-500/20 dark:text-emerald-300",
+  review:
+    "border-sky-500/35 bg-sky-500/[0.05] text-sky-800 dark:border-sky-500/20 dark:text-sky-200",
+  warning:
+    "border-amber-500/40 bg-amber-500/[0.06] text-amber-800 dark:border-amber-500/25 dark:text-amber-200",
 };
 
 export function SaveHealthPanel({ saveData }: { saveData: SaveData }) {
@@ -45,7 +47,7 @@ export function SaveHealthPanel({ saveData }: { saveData: SaveData }) {
           <p className="mt-1 text-xs text-muted-foreground">
             {t("Read-only checks based on the data already loaded. No files are changed.")}
           </p>
-          <div className="mt-3 rounded-lg border border-border/40 bg-background/35 p-3">
+          <div className="mt-3 rounded-lg border border-border/75 bg-background/35 p-3 dark:border-border/40">
             <div className="flex items-center justify-between gap-3 text-xs">
               <span className="font-medium">{t("Health radar score")}</span>
               <span className="font-mono font-semibold tabular-nums">{health.score}/100</span>
@@ -73,7 +75,7 @@ export function SaveHealthPanel({ saveData }: { saveData: SaveData }) {
             {health.findings.map((finding) => (
               <li
                 key={finding.key}
-                className="rounded-lg border border-border/40 bg-background/35 p-2.5"
+                className="rounded-lg border border-border/75 bg-background/35 p-2.5 dark:border-border/40"
               >
                 <p className="font-medium">{t(HEALTH_LABELS[finding.key])}</p>
                 <p className="mt-1 text-muted-foreground">

@@ -21,6 +21,11 @@ export interface CareerSnapshot {
   trucks_count?: number | null;
   drivers_count?: number | null;
   total_distance_km?: number | null;
+  total_fuel_litres?: number | null;
+  visited_cities_count?: number | null;
+  achieved_feats?: number | null;
+  discovered_items?: number | null;
+  save_version?: number | null;
 }
 
 export function summarizeSaveDelta(before: CareerSnapshot, after: CareerSnapshot): SaveDelta[];

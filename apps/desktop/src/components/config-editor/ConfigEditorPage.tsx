@@ -27,6 +27,7 @@ import { getConfigDiff } from "./config-diff";
 import { getConfigDisplayCategory, inferConfigGame } from "../../config-metadata";
 import { CONFIG_RANGES } from "../../config-ranges";
 import { getConfigRecoveryState } from "./config-recovery";
+import { ConfigProfilesPanel } from "./ConfigProfilesPanel";
 
 interface ConfigEditorPageProps {
   readOnly: boolean;
@@ -233,7 +234,8 @@ export function ConfigEditorPage({
       });
       setConfigPaths(paths);
       const currentSelected = useSaveEditorStore.getState().selectedConfigPath;
-      const targetPath = currentSelected && paths.includes(currentSelected) ? currentSelected : paths[0];
+      const targetPath =
+        currentSelected && paths.includes(currentSelected) ? currentSelected : paths[0];
       if (targetPath) {
         await selectConfig(targetPath);
         useSaveEditorStore.getState().setSelectedConfigPath(targetPath);
@@ -468,13 +470,12 @@ export function ConfigEditorPage({
           onCategoryChange={setConfigCategory}
           categories={[
             ...new Set(
-              configDoc.entries
-                .map((entry) =>
-                  getConfigDisplayCategory(entry.key, configGame, gameVersion, {
-                    description: CONFIG_DESCRIPTIONS[entry.key],
-                    range: CONFIG_RANGES[entry.key],
-                  }),
-                ),
+              configDoc.entries.map((entry) =>
+                getConfigDisplayCategory(entry.key, configGame, gameVersion, {
+                  description: CONFIG_DESCRIPTIONS[entry.key],
+                  range: CONFIG_RANGES[entry.key],
+                }),
+              ),
             ),
             // This is a new array from Set, so sorting it cannot mutate shared config state.
             // oxlint-disable-next-line unicorn/no-array-sort
@@ -494,6 +495,17 @@ export function ConfigEditorPage({
           <Kbd className="bg-primary-foreground/20 text-primary-foreground text-[10px]">Ctrl+S</Kbd>
         </Button>
       </div>
+
+      <ConfigProfilesPanel
+        configDoc={configDoc}
+        game={configGame}
+        readOnly={readOnly || isSaving}
+        onApply={(nextDocument) => {
+          setConfigDoc(nextDocument);
+          setConfigErrors({});
+          toast(t("Preset loaded into the editor. Review the changes before saving."));
+        }}
+      />
 
       {Object.values(configErrors).some((e) => e !== null) && (
         <div className="text-xs text-destructive">{t("Fix validation errors before saving")}</div>
