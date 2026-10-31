@@ -34,10 +34,10 @@ import { CareerConstellation } from "./CareerConstellation";
 type QuickAction = "unlock" | "maxSkills" | "repair" | "refuel";
 
 const QUICK_ACTION_LABELS: Record<QuickAction, string> = {
-  unlock: "Unlock all cities in this save? A complete backup is created first.",
-  maxSkills: "Max out all skills? A complete backup is created first.",
-  repair: "Repair all trucks? A complete backup is created first.",
-  refuel: "Refuel all trucks? A complete backup is created first.",
+  unlock: "Unlock all cities in this save?",
+  maxSkills: "Max out all skills?",
+  repair: "Repair all trucks?",
+  refuel: "Refuel all trucks?",
 };
 
 const QUICK_ACTION_NAMES: Record<QuickAction, string> = {
@@ -72,6 +72,7 @@ export function SaveEditorPage({
 }: SaveEditorPageProps) {
   const setIsSettingsOpen = useSettingsStore((state) => state.setIsSettingsOpen);
   const selectedProfile = useSaveEditorStore((s) => s.selectedProfile);
+  const activeGame = useSaveEditorStore((s) => s.activeGame);
   const profiles = useSaveEditorStore((s) => s.profiles);
   const selectedSave = useSaveEditorStore((s) => s.selectedSave);
   const saveData = useSaveEditorStore((s) => s.saveData);
@@ -88,6 +89,7 @@ export function SaveEditorPage({
   const [deleteTarget, setDeleteTarget] = useState<"save" | null>(null);
   const [pendingAction, setPendingAction] = useState<QuickAction | null>(null);
   const [editPreviewOpen, setEditPreviewOpen] = useState(false);
+  const [createBackup, setCreateBackup] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [isManaging, setIsManaging] = useState(false);
   const [refetchKey, setRefetchKey] = useState(0);
@@ -104,14 +106,10 @@ export function SaveEditorPage({
 
   // --- Load Save Data when selectedSave changes ---
   const saveSiiPath = selectedSave?.game_sii_path;
-  const selectedGamePath =
-    `${selectedProfile?.path ?? ""} ${selectedSave?.path ?? ""}`.toLowerCase();
   const selectedGameMarkers =
-    selectedGamePath.includes("american truck simulator") || selectedGamePath.includes("270880")
+    activeGame === "ats"
       ? ["american truck simulator", "270880"]
-      : selectedGamePath.includes("euro truck simulator 2") || selectedGamePath.includes("227300")
-        ? ["euro truck simulator 2", "227300"]
-        : [];
+      : ["euro truck simulator 2", "227300"];
   const matchingGameConfigs =
     selectedGameMarkers.length > 0
       ? configPaths.filter((path) =>
@@ -119,10 +117,7 @@ export function SaveEditorPage({
         )
       : [];
   const selectedGameName =
-    selectedGameMarkers.includes("american truck simulator") ||
-    selectedGameMarkers.includes("270880")
-      ? "American Truck Simulator"
-      : "Euro Truck Simulator 2";
+    activeGame === "ats" ? "American Truck Simulator" : "Euro Truck Simulator 2";
   const effectiveTextFormatConfigPath = configPaths.includes(textFormatConfigPath)
     ? textFormatConfigPath
     : matchingGameConfigs.length === 1
@@ -150,7 +145,7 @@ export function SaveEditorPage({
     setTextFormatConfigPath("");
     onStatusChange("Loading save...");
 
-    invoke<SaveData>("load_save", { gameSiiPath: saveSiiPath })
+    invoke<SaveData>("load_save", { gameId: activeGame, gameSiiPath: saveSiiPath })
       .then((data) => {
         if (!active) return;
         setSaveData(data);
@@ -172,7 +167,7 @@ export function SaveEditorPage({
     return () => {
       active = false;
     };
-  }, [saveSiiPath, refetchKey, onStatusChange, setSaveData, setMoneyInput, setXpInput]);
+  }, [activeGame, saveSiiPath, refetchKey, onStatusChange, setSaveData, setMoneyInput, setXpInput]);
 
   // --- Edit Money/XP ---
   const onEdit = useCallback(() => {
@@ -214,10 +209,11 @@ export function SaveEditorPage({
         gameSiiPath: selectedSave.game_sii_path,
         money,
         xp,
+        createBackup,
       });
       toast.success(result.message);
       onStatusChange(result.message);
-      if (result.backup) recordActivity("values-edited", selectedSave.save_name);
+      recordActivity("values-edited", selectedSave.save_name);
       setEditPreviewOpen(false);
       reloadSave();
     } catch (e) {
@@ -228,6 +224,7 @@ export function SaveEditorPage({
     selectedSave,
     moneyInput,
     xpInput,
+    createBackup,
     editPreviewRows.length,
     readOnly,
     onStatusChange,
@@ -276,10 +273,17 @@ export function SaveEditorPage({
     try {
       const result = await invoke<EditResult>(invokeCommands[action], {
         gameSiiPath: selectedSave.game_sii_path,
+        createBackup,
       });
       toast.success(result.message);
       onStatusChange(result.message);
-      if (result.backup) {
+      const wasNoOp = [
+        "No new cities to unlock.",
+        "Skills already maxed.",
+        "Everything already repaired.",
+        "Everything already refueled.",
+      ].includes(result.message);
+      if (!wasNoOp) {
         const activityKind = {
           unlock: "cities-unlocked",
           maxSkills: "skills-maxed",
@@ -293,7 +297,7 @@ export function SaveEditorPage({
       toast.error(String(e));
       onStatusChange(`Error: ${e}`);
     }
-  }, [selectedSave, pendingAction, readOnly, isManaging, onStatusChange, reloadSave]);
+  }, [selectedSave, pendingAction, readOnly, isManaging, createBackup, onStatusChange, reloadSave]);
 
   // --- Rename / Clone / Delete ---
   const onRename = useCallback(
@@ -593,6 +597,8 @@ export function SaveEditorPage({
         selectedSave={selectedSave}
         saveData={saveData}
         readOnly={readOnly}
+        createBackup={createBackup}
+        onCreateBackupChange={setCreateBackup}
         moneyInput={moneyInput}
         xpInput={xpInput}
         onReload={reloadSave}
@@ -630,14 +636,24 @@ export function SaveEditorPage({
                   </div>
                 </div>
               ))}
-              <div className="flex items-start gap-2 rounded-lg border border-emerald-500/20 bg-emerald-500/[0.05] p-3 text-xs leading-5 text-muted-foreground">
+              <div className="flex items-start gap-2 rounded-lg border border-border/50 bg-background/40 p-3 text-xs leading-5 text-muted-foreground">
                 <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-emerald-400" />
                 <p>
                   {t(
-                    "A full save backup is created before changed values are written. The original can be restored from Backup Center.",
+                    createBackup
+                      ? "A full save backup is created before changed values are written. The original can be restored from Backup Center."
+                      : "No backup will be created before saving these changes.",
                   )}
                 </p>
               </div>
+              <label className="flex cursor-pointer items-center gap-2 px-1 text-xs text-foreground">
+                <input
+                  type="checkbox"
+                  checked={createBackup}
+                  onChange={(event) => setCreateBackup(event.target.checked)}
+                />
+                {t("Create a backup before saving")}
+              </label>
             </div>
           ) : (
             <p className="rounded-lg border border-border/50 bg-background/40 p-3 text-sm text-muted-foreground">
@@ -653,7 +669,7 @@ export function SaveEditorPage({
               }}
               disabled={readOnly || editPreviewRows.length === 0}
             >
-              {t("Create backup and save")}
+              {t(createBackup ? "Create backup and save" : "Save without backup")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -739,8 +755,20 @@ export function SaveEditorPage({
                   )}
                 </div>
               )}
-              <p className="border-t border-border/40 pt-2 text-[11px] leading-5 text-emerald-300">
-                {t("A full save backup is created before changes are written.")}
+              <label className="flex cursor-pointer items-center gap-2 border-t border-border/40 pt-2 text-[11px] leading-5 text-foreground">
+                <input
+                  type="checkbox"
+                  checked={createBackup}
+                  onChange={(event) => setCreateBackup(event.target.checked)}
+                />
+                {t("Create a backup before saving")}
+              </label>
+              <p className="text-[11px] leading-5 text-muted-foreground">
+                {t(
+                  createBackup
+                    ? "A full save backup is created before changes are written."
+                    : "No backup will be created before these changes.",
+                )}
               </p>
             </div>
           )}

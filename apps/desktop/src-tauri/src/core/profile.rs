@@ -2,7 +2,7 @@ use std::path::PathBuf;
 
 use serde::Serialize;
 
-use crate::core::detection::{all_games, get_current_platform, GameConfig, Platform};
+use crate::core::detection::{all_games, get_current_platform, GameConfig, GameType, Platform};
 
 #[derive(Debug, Clone, Serialize)]
 pub struct SaveFile {
@@ -29,6 +29,7 @@ impl SaveFile {
 pub struct Profile {
     pub path: PathBuf,
     pub name: String,
+    pub game_type: GameType,
 }
 
 impl Profile {
@@ -46,6 +47,7 @@ pub struct ProfileDetector {
     pub games: Vec<&'static GameConfig>,
     pub platform: Platform,
     pub custom_paths: Vec<PathBuf>,
+    pub custom_game_type: GameType,
 }
 
 impl Default for ProfileDetector {
@@ -60,6 +62,7 @@ impl ProfileDetector {
             games: all_games().iter().collect(),
             platform: get_current_platform(),
             custom_paths: Vec::new(),
+            custom_game_type: GameType::Ets2,
         }
     }
 
@@ -68,6 +71,16 @@ impl ProfileDetector {
             games,
             platform: get_current_platform(),
             custom_paths: Vec::new(),
+            custom_game_type: GameType::Ets2,
+        }
+    }
+
+    pub fn for_game(game: &'static GameConfig) -> Self {
+        Self {
+            games: vec![game],
+            platform: get_current_platform(),
+            custom_paths: Vec::new(),
+            custom_game_type: game.game_type,
         }
     }
 
@@ -78,16 +91,21 @@ impl ProfileDetector {
         for game in &self.games {
             for path in game.get_paths(self.platform) {
                 let profiles_dir = path.join("profiles");
-                scan_profiles_dir(&profiles_dir, &mut profiles, &mut seen)?;
+                scan_profiles_dir(&profiles_dir, game.game_type, &mut profiles, &mut seen)?;
             }
         }
 
         for custom_path in &self.custom_paths {
             let profiles_dir = custom_path.join("profiles");
-            scan_profiles_dir(&profiles_dir, &mut profiles, &mut seen)?;
+            scan_profiles_dir(
+                &profiles_dir,
+                self.custom_game_type,
+                &mut profiles,
+                &mut seen,
+            )?;
 
             if custom_path.is_dir() {
-                scan_profiles_dir(custom_path, &mut profiles, &mut seen)?;
+                scan_profiles_dir(custom_path, self.custom_game_type, &mut profiles, &mut seen)?;
 
                 if custom_path.join("profile.sii").exists() && seen.insert(custom_path.clone()) {
                     let name = custom_path
@@ -97,6 +115,7 @@ impl ProfileDetector {
                     profiles.push(Profile {
                         path: custom_path.clone(),
                         name,
+                        game_type: self.custom_game_type,
                     });
                 }
             }
@@ -142,6 +161,7 @@ impl ProfileDetector {
 
 fn scan_profiles_dir(
     dir: &std::path::Path,
+    game_type: GameType,
     profiles: &mut Vec<Profile>,
     seen: &mut std::collections::HashSet<PathBuf>,
 ) -> Result<(), String> {
@@ -169,6 +189,7 @@ fn scan_profiles_dir(
             profiles.push(Profile {
                 path: profile_path,
                 name,
+                game_type,
             });
         }
     }
@@ -222,6 +243,7 @@ mod tests {
         let p = Profile {
             path: PathBuf::from("/tmp"),
             name: "48656c6c6f".to_string(),
+            game_type: GameType::Ets2,
         };
         assert_eq!(p.display_name(), "Hello");
     }
@@ -231,6 +253,7 @@ mod tests {
         let p = Profile {
             path: PathBuf::from("/tmp"),
             name: "plain_name".to_string(),
+            game_type: GameType::Ets2,
         };
         assert_eq!(p.display_name(), "plain_name");
     }
@@ -284,6 +307,7 @@ mod tests {
         let profile = Profile {
             path: profile_path,
             name: "profile".into(),
+            game_type: GameType::Ets2,
         };
 
         let error = ProfileDetector::new().get_saves(&profile).unwrap_err();

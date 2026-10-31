@@ -19,6 +19,7 @@ For most Windows PCs, choose the file ending in **`.msi`** on the latest release
 
 - **Profile and save browser:** find profiles and saves and review available progress information.
 - **Save editor:** change supported money and experience values and use supported quick actions.
+- **Game selection:** switch between ETS2 and early ATS profile/config discovery. ATS save editing and compatibility are not validated yet.
 - **Save management:** rename, clone, and delete save files.
 - **Configuration editor:** search and edit `config.cfg` with type-aware validation, source-aware guidance, cautious numeric controls, recovery help, and local presets with a change preview.
 - **Backups:** create timestamped backups, compare save timelines across known metrics, and verify backups with a temporary restore rehearsal that does not replace live game files.

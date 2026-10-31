@@ -4,6 +4,7 @@ use serde::Serialize;
 
 use crate::core::backup::backup_file;
 use crate::core::compatibility::APP_VERSION;
+use crate::core::detection::{find_config_files_for_game, game_by_id, GameType};
 use crate::save_parser::config::{ConfigDocument, ConfigEntry};
 
 use super::EditResult;
@@ -17,27 +18,43 @@ pub struct AppVersionInfo {
 }
 
 #[tauri::command]
-pub fn get_app_info(custom_path: Option<String>) -> Result<AppVersionInfo, String> {
+pub fn get_app_info(
+    game_id: Option<String>,
+    custom_path: Option<String>,
+) -> Result<AppVersionInfo, String> {
+    let game_id = game_id.as_deref().unwrap_or("ets2");
+    let game = game_by_id(game_id).ok_or_else(|| format!("Unsupported game id: {game_id}"))?;
     let custom_p = custom_path
         .as_deref()
         .filter(|s| !s.trim().is_empty())
         .map(Path::new);
-    let (game_version, compatibility_warning) = super::helpers::read_game_version(custom_p);
+    let (game_version, compatibility_warning) =
+        super::helpers::read_game_version_for_game(custom_p, game.game_type);
     Ok(AppVersionInfo {
         app_version: APP_VERSION.to_string(),
         game_version,
-        tested_game_version: crate::core::compatibility::TESTED_GAME_VERSION.to_display(),
+        tested_game_version: if game.game_type == GameType::Ats {
+            "Not validated".into()
+        } else {
+            crate::core::compatibility::TESTED_GAME_VERSION.to_display()
+        },
         compatibility_warning,
     })
 }
 
 #[tauri::command]
-pub fn list_configs(custom_path: Option<String>) -> Result<Vec<String>, String> {
+pub fn list_configs(
+    game_id: Option<String>,
+    custom_path: Option<String>,
+) -> Result<Vec<String>, String> {
+    let game_id = game_id.as_deref().unwrap_or("ets2");
+    let game_type =
+        GameType::from_id(game_id).ok_or_else(|| format!("Unsupported game id: {game_id}"))?;
     let custom_p = custom_path
         .as_deref()
         .filter(|s| !s.trim().is_empty())
         .map(Path::new);
-    let configs = crate::core::detection::find_config_files(custom_p);
+    let configs = find_config_files_for_game(custom_p, game_type);
     Ok(configs
         .into_iter()
         .map(|p| p.to_string_lossy().to_string())

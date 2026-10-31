@@ -12,6 +12,7 @@ import {
 } from "ui";
 import { Sun, Moon, Monitor, ExternalLink, Folder, Settings, Shield, Download, Compass } from "lucide-react";
 import { useSettingsStore } from "../../stores/settings";
+import { useSaveEditorStore } from "../../stores/save-editor";
 import { translate } from "../../i18n";
 import { useEffect } from "react";
 import { GamePathSelector } from "../save-editor/GamePathSelector";
@@ -41,7 +42,8 @@ export function SettingsDialog({ appInfo, onOpenSetupGuide }: SettingsDialogProp
   const {
     readOnly,
     setReadOnly,
-    customGamePath,
+    customGamePath: customEts2Path,
+    customAtsPath,
     setCustomGamePath,
     isSettingsOpen,
     setIsSettingsOpen,
@@ -51,6 +53,8 @@ export function SettingsDialog({ appInfo, onOpenSetupGuide }: SettingsDialogProp
     settingsTarget,
     clearSettingsTarget,
   } = useSettingsStore();
+  const activeGame = useSaveEditorStore((state) => state.activeGame);
+  const customGamePath = activeGame === "ats" ? customAtsPath : customEts2Path;
   const t = (text: string) => translate(language, text);
 
   function exportDiagnostics() {
@@ -193,7 +197,10 @@ export function SettingsDialog({ appInfo, onOpenSetupGuide }: SettingsDialogProp
               <Folder className="h-4 w-4 text-muted-foreground" />
               {t("Game Directory")}
             </h4>
-            <GamePathSelector customPath={customGamePath} onPathChange={setCustomGamePath} />
+            <GamePathSelector
+              customPath={customGamePath}
+              onPathChange={(path) => setCustomGamePath(path, activeGame)}
+            />
           </section>
 
           <Separator />

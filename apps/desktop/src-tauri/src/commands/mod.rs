@@ -46,6 +46,7 @@ pub struct EditResult {
 pub struct ProfileInfo {
     pub path: String,
     pub name: String,
+    pub game_id: String,
     pub display_name: String,
     pub active_mods: Vec<String>,
     pub cached_experience: Option<i64>,

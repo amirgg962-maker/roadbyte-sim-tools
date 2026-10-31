@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { getPersistStorage } from "./storage";
+import type { GameId } from "../types";
 
 export type TabId = "saves" | "config" | "settings";
 export type AppLanguage = "en" | "fa";
@@ -9,6 +10,7 @@ interface SettingsState {
   readOnly: boolean;
   lastTab: TabId;
   customGamePath: string;
+  customAtsPath: string;
   language: AppLanguage;
   hasCompletedOnboarding: boolean;
   isSettingsOpen: boolean;
@@ -16,7 +18,7 @@ interface SettingsState {
 
   setReadOnly: (value: boolean) => void;
   setLastTab: (tab: TabId) => void;
-  setCustomGamePath: (path: string) => void;
+  setCustomGamePath: (path: string, game?: GameId) => void;
   setLanguage: (language: AppLanguage) => void;
   setHasCompletedOnboarding: (value: boolean) => void;
   setIsSettingsOpen: (open: boolean) => void;
@@ -30,6 +32,7 @@ export const useSettingsStore = create<SettingsState>()(
       readOnly: true,
       lastTab: "saves",
       customGamePath: "",
+      customAtsPath: "",
       language: "en",
       hasCompletedOnboarding: false,
       isSettingsOpen: false,
@@ -37,7 +40,8 @@ export const useSettingsStore = create<SettingsState>()(
 
       setReadOnly: (readOnly) => set({ readOnly }),
       setLastTab: (lastTab) => set({ lastTab }),
-      setCustomGamePath: (customGamePath) => set({ customGamePath }),
+      setCustomGamePath: (path, game = "ets2") =>
+        set(game === "ats" ? { customAtsPath: path } : { customGamePath: path }),
       setLanguage: (language) => set({ language }),
       setHasCompletedOnboarding: (hasCompletedOnboarding) => set({ hasCompletedOnboarding }),
       setIsSettingsOpen: (isSettingsOpen) => set({ isSettingsOpen }),
@@ -51,6 +55,7 @@ export const useSettingsStore = create<SettingsState>()(
         readOnly: state.readOnly,
         lastTab: state.lastTab,
         customGamePath: state.customGamePath,
+        customAtsPath: state.customAtsPath,
         language: state.language,
         hasCompletedOnboarding: state.hasCompletedOnboarding,
       }),

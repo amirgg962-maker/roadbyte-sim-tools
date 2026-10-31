@@ -4,6 +4,7 @@ use crate::core::compatibility::{
     check_compatibility, find_game_version_in_config, CompatibilityStatus,
 };
 use crate::core::detection::find_config_files;
+use crate::core::detection::{find_config_files_for_game, GameType};
 use crate::save_parser::compression::{decompress_save, read_save_file};
 use crate::save_parser::sii::{SiiDocument, MAX_ARRAY_ITEMS};
 
@@ -102,13 +103,31 @@ pub fn read_info_sii(save_path: &Path) -> Result<(Option<u32>, Option<i64>, Vec<
 /// Read game version from config.cfg, returning (version_string, warning).
 pub fn read_game_version(custom_path: Option<&Path>) -> (Option<String>, Option<String>) {
     let configs = find_config_files(custom_path);
+    read_game_version_from_configs(configs, None)
+}
+
+pub fn read_game_version_for_game(
+    custom_path: Option<&Path>,
+    game_type: GameType,
+) -> (Option<String>, Option<String>) {
+    let configs = find_config_files_for_game(custom_path, game_type);
+    read_game_version_from_configs(configs, Some(game_type))
+}
+
+fn read_game_version_from_configs(
+    configs: Vec<std::path::PathBuf>,
+    game_type: Option<GameType>,
+) -> (Option<String>, Option<String>) {
     for path in &configs {
         let content = match std::fs::read_to_string(path) {
             Ok(c) => c,
             Err(_) => continue,
         };
         if let Some(version) = find_game_version_in_config(&content) {
-            let warning = match check_compatibility(&version) {
+            let warning = if game_type == Some(GameType::Ats) {
+                Some("ATS version compatibility has not been validated yet.".into())
+            } else {
+                match check_compatibility(&version) {
                 CompatibilityStatus::Supported => None,
                 CompatibilityStatus::Untested { detected_version } => {
                     Some(format!(
@@ -125,6 +144,7 @@ pub fn read_game_version(custom_path: Option<&Path>) -> (Option<String>, Option<
                 }
                 CompatibilityStatus::Unknown => {
                     Some("Could not determine game version from config.cfg.".into())
+                }
                 }
             };
             return (Some(version), warning);

@@ -73,7 +73,10 @@ export function ConfigEditorPage({
   selectedConfigPath,
   gameVersion,
 }: ConfigEditorPageProps) {
-  const customGamePath = useSettingsStore((s) => s.customGamePath);
+  const activeGame = useSaveEditorStore((s) => s.activeGame);
+  const customGamePath = useSettingsStore((s) =>
+    activeGame === "ats" ? s.customAtsPath : s.customGamePath,
+  );
   const openGamePathSettings = useSettingsStore((s) => s.openGamePathSettings);
   const language = useSettingsStore((s) => s.language);
   const t = (text: string) => translate(language, text);
@@ -156,7 +159,7 @@ export function ConfigEditorPage({
         onStatusChange(`Error: ${e}`);
       }
     },
-    [onStatusChange],
+    [customGamePath, onStatusChange],
   );
 
   useEffect(() => {
@@ -178,6 +181,7 @@ export function ConfigEditorPage({
 
       try {
         const paths = await invoke<string[]>("list_configs", {
+          gameId: activeGame,
           customPath: customGamePath || null,
         });
 
@@ -216,7 +220,7 @@ export function ConfigEditorPage({
       active = false;
       activeRef.current = false;
     };
-  }, [customGamePath, onStatusChange, selectConfig]);
+  }, [activeGame, customGamePath, onStatusChange, selectConfig]);
 
   useEffect(() => {
     if (selectedConfigPath && selectedConfigPath !== selectedConfig) {
@@ -230,6 +234,7 @@ export function ConfigEditorPage({
     setLoadError(null);
     try {
       const paths = await invoke<string[]>("list_configs", {
+        gameId: activeGame,
         customPath: customGamePath || null,
       });
       setConfigPaths(paths);
@@ -252,7 +257,7 @@ export function ConfigEditorPage({
     } finally {
       setLoading(false);
     }
-  }, [customGamePath, onStatusChange, selectConfig]);
+  }, [activeGame, customGamePath, onStatusChange, selectConfig]);
 
   const commitConfigSave = useCallback(async (): Promise<boolean> => {
     if (!selectedConfig || !configDoc || readOnly || isSaving) return false;

@@ -34,8 +34,9 @@ import {
   User,
   UserCheck,
   CloudOff,
+  Truck,
 } from "lucide-react";
-import type { ProfileInfo, SaveInfo } from "../../types";
+import type { GameId, ProfileInfo, SaveInfo } from "../../types";
 import { useSettingsStore } from "../../stores/settings";
 import { useSaveEditorStore } from "../../stores/save-editor";
 import type { WorkspaceTab } from "../../stores/save-editor";
@@ -54,6 +55,8 @@ interface AppVersionInfo {
 
 interface SidebarNavProps {
   appInfo: AppVersionInfo | null;
+  activeGame: GameId;
+  onSelectGame: (game: GameId) => void;
   profiles: ProfileInfo[];
   saves: SaveInfo[];
   selectedProfile: ProfileInfo | null;
@@ -72,6 +75,8 @@ interface SidebarNavProps {
 
 export function SidebarNav({
   appInfo,
+  activeGame,
+  onSelectGame,
   profiles,
   saves,
   selectedProfile,
@@ -90,7 +95,9 @@ export function SidebarNav({
   const readOnly = useSettingsStore((s) => s.readOnly);
   const setReadOnly = useSettingsStore((s) => s.setReadOnly);
   const setIsSettingsOpen = useSettingsStore((s) => s.setIsSettingsOpen);
-  const customGamePath = useSettingsStore((s) => s.customGamePath);
+  const customGamePath = useSettingsStore((s) =>
+    activeGame === "ats" ? s.customAtsPath : s.customGamePath,
+  );
   const language = useSettingsStore((s) => s.language);
   const t = (text: string) => translate(language, text);
   const activeWorkspace = useSaveEditorStore((s) => s.activeWorkspace);
@@ -153,6 +160,50 @@ export function SidebarNav({
           >
             <RefreshCw className={`h-3.5 w-3.5 ${loadingProfiles ? "animate-spin" : ""}`} />
           </Button>
+        </div>
+
+        <div className="px-3 py-3 border-b border-border/30">
+          <div className="mb-2 px-1 text-[9px] font-bold tracking-[0.16em] text-muted-foreground/70">
+            {t("SELECT GAME")}
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            {(
+              [
+                { id: "ets2", short: "ETS2", name: "Euro Truck Simulator 2" },
+                { id: "ats", short: "ATS", name: "American Truck Simulator" },
+              ] as const
+            ).map((game) => {
+              const selected = activeGame === game.id;
+              return (
+                <button
+                  key={game.id}
+                  type="button"
+                  aria-pressed={selected}
+                  onClick={() => onSelectGame(game.id)}
+                  className={`min-w-0 rounded-xl border p-2 text-left transition-colors ${
+                    selected
+                      ? "border-primary/50 bg-primary/10 text-foreground shadow-sm"
+                      : "border-border/40 bg-muted/15 text-muted-foreground hover:border-primary/30 hover:bg-muted/35 hover:text-foreground"
+                  }`}
+                >
+                  <span className="flex items-center gap-1.5 text-xs font-bold">
+                    <Truck className={`h-3.5 w-3.5 shrink-0 ${selected ? "text-primary" : ""}`} />
+                    {game.short}
+                  </span>
+                  <span className="mt-1 block truncate text-[9px] leading-4" title={game.name}>
+                    {game.name}
+                  </span>
+                  <span
+                    className={`mt-1 block text-[8px] font-semibold ${
+                      game.id === "ats" ? "text-amber-500" : "text-emerald-500"
+                    }`}
+                  >
+                    {t(game.id === "ats" ? "Early support" : "Supported")}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
         </div>
 
         <div className="p-3 border-b border-border/30">
@@ -402,7 +453,9 @@ export function SidebarNav({
                     : "Default Game Path"}
               </span>
             </div>
-            <span className="font-mono text-[9px] text-muted-foreground/60 shrink-0">ETS2</span>
+            <span className="font-mono text-[9px] text-muted-foreground/60 shrink-0">
+              {activeGame.toUpperCase()}
+            </span>
           </div>
 
           <button

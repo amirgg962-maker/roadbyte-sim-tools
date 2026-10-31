@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { getPersistStorage } from "./storage";
-import type { ProfileInfo, SaveInfo, SaveData } from "../types";
+import type { ProfileInfo, SaveInfo, SaveData, GameId } from "../types";
 
 export type WorkspaceTab = "saves" | "config" | "backups";
 
@@ -14,6 +14,7 @@ export interface SaveEditorState {
   moneyInput: string;
   xpInput: string;
   activeWorkspace: WorkspaceTab;
+  activeGame: GameId;
   selectedConfigPath: string | null;
 
   setProfiles: (profiles: ProfileInfo[]) => void;
@@ -24,6 +25,7 @@ export interface SaveEditorState {
   setMoneyInput: (value: string) => void;
   setXpInput: (value: string) => void;
   setActiveWorkspace: (workspace: WorkspaceTab) => void;
+  setActiveGame: (game: GameId) => void;
   setSelectedConfigPath: (path: string | null) => void;
 }
 
@@ -38,6 +40,7 @@ export const useSaveEditorStore = create<SaveEditorState>()(
       moneyInput: "",
       xpInput: "",
       activeWorkspace: "saves",
+      activeGame: "ets2",
       selectedConfigPath: null,
 
       setProfiles: (profiles) => set({ profiles }),
@@ -48,6 +51,7 @@ export const useSaveEditorStore = create<SaveEditorState>()(
       setMoneyInput: (moneyInput) => set({ moneyInput }),
       setXpInput: (xpInput) => set({ xpInput }),
       setActiveWorkspace: (activeWorkspace) => set({ activeWorkspace }),
+      setActiveGame: (activeGame) => set({ activeGame }),
       setSelectedConfigPath: (selectedConfigPath) => set({ selectedConfigPath }),
     }),
     {
@@ -55,6 +59,7 @@ export const useSaveEditorStore = create<SaveEditorState>()(
       storage: getPersistStorage(),
       partialize: (state) => ({
         activeWorkspace: state.activeWorkspace,
+        activeGame: state.activeGame,
         selectedConfigPath: state.selectedConfigPath,
       }),
     },
