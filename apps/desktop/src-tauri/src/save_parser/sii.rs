@@ -32,6 +32,57 @@ impl SiiDocument {
         Some(cap.get(1)?.as_str())
     }
 
+    pub fn get_unit_property(&self, unit_type: &str, property_name: &str) -> Option<&str> {
+        let range = self.find_unit_range(unit_type)?;
+        let unit = &self.content[range];
+        let escaped = regex::escape(property_name);
+        let pattern = format!(r"(?m)^\s*{}\s*:\s*(.+?)\s*$", escaped);
+        let re = Regex::new(&pattern).ok()?;
+        let cap = re.captures(unit)?;
+        Some(cap.get(1)?.as_str())
+    }
+
+    pub fn set_unit_property(
+        &mut self,
+        unit_type: &str,
+        property_name: &str,
+        new_value: &str,
+    ) -> Result<bool, SaveError> {
+        let Some(range) = self.find_unit_range(unit_type) else {
+            return Ok(false);
+        };
+        let escaped = regex::escape(property_name);
+        let pattern = format!(
+            r"(?m)(^[ \t]*{}[ \t]*:[ \t]*)([^\r\n]*?)([ \t]*\r?$)",
+            escaped
+        );
+        let re = Regex::new(&pattern)?;
+        let (changed, new_unit) = {
+            let unit = &self.content[range.clone()];
+            let new_unit = re
+                .replace_all(unit, |captures: &regex::Captures<'_>| {
+                    format!("{}{}{}", &captures[1], new_value, &captures[3])
+                })
+                .into_owned();
+            (new_unit != unit, new_unit)
+        };
+        if changed {
+            self.content.replace_range(range, &new_unit);
+        }
+        Ok(changed)
+    }
+
+    fn find_unit_range(&self, unit_type: &str) -> Option<std::ops::Range<usize>> {
+        let pattern = format!(
+            r"(?m)^[ \t]*{}[ \t]*:[ \t]*[^\r\n]*\{{",
+            regex::escape(unit_type)
+        );
+        let header = Regex::new(&pattern).ok()?.find(&self.content)?;
+        let opening_brace = header.end().checked_sub(1)?;
+        let closing_brace = matching_brace(self.content.as_bytes(), opening_brace)?;
+        Some(header.start()..closing_brace + 1)
+    }
+
     pub fn set_property(
         &mut self,
         property_name: &str,
@@ -148,6 +199,39 @@ impl SiiDocument {
     }
 }
 
+fn matching_brace(bytes: &[u8], opening_brace: usize) -> Option<usize> {
+    let mut depth = 0usize;
+    let mut in_string = false;
+    let mut escaped = false;
+
+    for (index, byte) in bytes.iter().enumerate().skip(opening_brace) {
+        if in_string {
+            if escaped {
+                escaped = false;
+            } else if *byte == b'\\' {
+                escaped = true;
+            } else if *byte == b'"' {
+                in_string = false;
+            }
+            continue;
+        }
+
+        match *byte {
+            b'"' => in_string = true,
+            b'{' => depth = depth.checked_add(1)?,
+            b'}' => {
+                depth = depth.checked_sub(1)?;
+                if depth == 0 {
+                    return Some(index);
+                }
+            }
+            _ => {}
+        }
+    }
+
+    None
+}
+
 #[cfg(test)]
 #[allow(clippy::unwrap_used)]
 mod tests {
@@ -213,6 +297,55 @@ mod tests {
 
             assert_eq!(doc.content(), format!("name: {value}"));
         }
+    }
+
+    #[test]
+    fn test_get_unit_property_is_scoped_to_requested_unit() {
+        let doc = make_doc(
+            "SiiNunit\n{\n bank : bank.0 {\n  money_account: 100\n }\n economy : economy.0 {\n  money_account: 900\n }\n}\n",
+        );
+
+        assert_eq!(doc.get_unit_property("bank", "money_account"), Some("100"));
+    }
+
+    #[test]
+    fn test_set_unit_property_changes_only_requested_unit() {
+        let mut doc = make_doc(
+            "SiiNunit\n{\n driver_player : driver.0 {\n  experience_points: 100\n }\n driver : driver.1 {\n  experience_points: 200\n }\n}\n",
+        );
+
+        assert!(doc
+            .set_unit_property("driver_player", "experience_points", "5000")
+            .unwrap());
+
+        assert_eq!(
+            doc.get_unit_property("driver_player", "experience_points"),
+            Some("5000")
+        );
+        assert_eq!(
+            doc.get_unit_property("driver", "experience_points"),
+            Some("200")
+        );
+        assert!(doc.content().contains("experience_points: 200"));
+    }
+
+    #[test]
+    fn test_set_unit_property_ignores_braces_inside_quoted_strings() {
+        let mut doc = make_doc(
+            "SiiNunit\n{\n driver_player : driver.0 {\n  note: \"text with } brace\"\n  experience_points: 100\n }\n driver : driver.1 {\n  experience_points: 200\n }\n}\n",
+        );
+
+        assert!(doc
+            .set_unit_property("driver_player", "experience_points", "5000")
+            .unwrap());
+        assert_eq!(
+            doc.get_unit_property("driver_player", "experience_points"),
+            Some("5000")
+        );
+        assert_eq!(
+            doc.get_unit_property("driver", "experience_points"),
+            Some("200")
+        );
     }
 
     #[test]

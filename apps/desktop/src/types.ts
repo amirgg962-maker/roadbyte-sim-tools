@@ -1,11 +1,14 @@
 export interface ProfileInfo {
   path: string;
   name: string;
+  game_id: GameId;
   display_name: string;
   active_mods: string[];
   cached_experience: number | null;
   cached_distance: number | null;
 }
+
+export type GameId = "ets2" | "ats";
 
 export interface SaveInfo {
   profile_path: string;

@@ -2,6 +2,11 @@ import type { AppLanguage } from "./stores/settings";
 
 // Keep game formats, identifiers, and established technical labels in English.
 const fa: Record<string, string> = {
+  "SELECT GAME": "انتخاب بازی",
+  "Early support": "پشتیبانی اولیه",
+  Supported: "پشتیبانی‌شده",
+  "Default ATS directories": "مسیرهای پیش‌فرض ATS",
+  "Not validated": "هنوز اعتبارسنجی نشده",
   "Settings & Preferences": "تنظیمات",
   "Manage application theme, game directory, safety settings, and view version details.":
     "ظاهر برنامه، مسیر بازی و گزینه‌های ایمنی را تنظیم کنید و اطلاعات نسخه را ببینید.",
@@ -83,6 +88,8 @@ const fa: Record<string, string> = {
   "Each operation creates a backup before writing.": "هر عملیات پیش از نوشتن، پشتیبان می‌سازد.",
   "If a step fails, earlier completed steps remain saved and backed up.":
     "اگر یکی از گام‌ها شکست بخورد، گام‌های قبلی ذخیره شده‌اند و پشتیبان دارند.",
+  "If a step fails, earlier completed steps remain saved.":
+    "اگر یکی از گام‌ها شکست بخورد، تغییرهای گام‌های قبلی ذخیره شده‌اند.",
   Target: "مقصد",
   Back: "بازگشت",
   "Apply plan": "اجرای برنامه",
@@ -447,6 +454,13 @@ const fa: Record<string, string> = {
     "مقادیر واردشده با ذخیره یکسان است و تغییری لازم نیست.",
   "Go back": "بازگشت",
   "Create backup and save": "ساخت پشتیبان و ذخیره",
+  "Create a backup before saving": "پیش از ذخیره، نسخهٔ پشتیبان بساز",
+  "Save without backup": "ذخیره بدون پشتیبان",
+  "No backup will be created before saving these changes.":
+    "پیش از ذخیرهٔ این تغییرات، نسخهٔ پشتیبان ساخته نمی‌شود.",
+  "No backup will be created before these changes.":
+    "پیش از این تغییرات، نسخهٔ پشتیبان ساخته نمی‌شود.",
+  "Saved.": "ذخیره شد.",
   "Review config changes": "بازبینی تغییرات تنظیمات",
   "Review each changed setting before writing this configuration file.":
     "پیش از نوشتن فایل تنظیمات، تک‌تک گزینه‌های تغییرکرده را بررسی کنید.",
@@ -492,14 +506,10 @@ const fa: Record<string, string> = {
   "Create an experiment copy": "ساخت کپی آزمایشی",
   "Creates and selects a separate save in this profile. Experiment on the copy while the original stays untouched; edits create their own backup.":
     "یک ذخیرهٔ جدا در این پروفایل می‌سازد و انتخاب می‌کند. روی کپی آزمایش کنید تا نسخهٔ اصلی دست‌نخورده بماند؛ تغییرها نیز پشتیبان دارند.",
-  "Unlock all cities in this save? A complete backup is created first.":
-    "همهٔ شهرها در این ذخیره باز شوند؟ ابتدا پشتیبان کامل ساخته می‌شود.",
-  "Max out all skills? A complete backup is created first.":
-    "همهٔ مهارت‌ها به حداکثر برسند؟ ابتدا پشتیبان کامل ساخته می‌شود.",
-  "Repair all trucks? A complete backup is created first.":
-    "همهٔ کامیون‌ها تعمیر شوند؟ ابتدا پشتیبان کامل ساخته می‌شود.",
-  "Refuel all trucks? A complete backup is created first.":
-    "همهٔ کامیون‌ها سوخت‌گیری شوند؟ ابتدا پشتیبان کامل ساخته می‌شود.",
+  "Unlock all cities in this save?": "همهٔ شهرها در این ذخیره باز شوند؟",
+  "Max out all skills?": "همهٔ مهارت‌ها به حداکثر برسند؟",
+  "Repair all trucks?": "همهٔ کامیون‌ها تعمیر شوند؟",
+  "Refuel all trucks?": "همهٔ کامیون‌ها سوخت‌گیری شوند؟",
   "Marks cities found in this save as visited. The exact new city count is returned after the action.":
     "شهرهای موجود در فایل ذخیره را به‌عنوان بازدیدشده ثبت می‌کند. تعداد دقیق شهرهای تازه پس از عملیات گزارش می‌شود.",
   "Sets ADR to 63 and the other supported driver skills to 6.":

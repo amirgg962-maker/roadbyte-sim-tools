@@ -3,6 +3,7 @@ import { open } from "@tauri-apps/plugin-dialog";
 import { Button, Input, toast } from "ui";
 import { Folder, FolderSearch, RotateCcw, Check, X, HardDrive } from "lucide-react";
 import { useSettingsStore } from "../../stores/settings";
+import { useSaveEditorStore } from "../../stores/save-editor";
 import { translate } from "../../i18n";
 
 interface GamePathSelectorProps {
@@ -17,6 +18,7 @@ export function GamePathSelector({
   compact = false,
 }: GamePathSelectorProps) {
   const language = useSettingsStore((state) => state.language);
+  const activeGame = useSaveEditorStore((state) => state.activeGame);
   const t = (text: string) => translate(language, text);
   const [isEditing, setIsEditing] = useState(false);
   const [inputVal, setInputVal] = useState(customPath);
@@ -110,7 +112,11 @@ export function GamePathSelector({
         <div className="flex items-center gap-2 pt-1">
           <Input
             type="text"
-            placeholder="e.g. D:\Games\Euro Truck Simulator 2 or /path/to/profiles"
+            placeholder={
+              activeGame === "ats"
+                ? "e.g. D:\\Games\\American Truck Simulator or /path/to/profiles"
+                : "e.g. D:\\Games\\Euro Truck Simulator 2 or /path/to/profiles"
+            }
             value={inputVal}
             onChange={(e) => setInputVal(e.target.value)}
             className="font-mono text-xs flex-1"
@@ -140,7 +146,7 @@ export function GamePathSelector({
           <div className="flex items-center gap-2 overflow-hidden">
             <span className="text-xs font-medium text-muted-foreground">{t("Current:")}</span>
             <code className="truncate rounded bg-muted/60 px-2 py-1 font-mono text-xs text-foreground max-w-md">
-              {customPath || t("Default ETS2 directories")}
+              {customPath || t(activeGame === "ats" ? "Default ATS directories" : "Default ETS2 directories")}
             </code>
           </div>
           <div className="flex items-center gap-2">

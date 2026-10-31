@@ -45,6 +45,8 @@ export function ProWorkbenchPanel({
   readOnly,
   moneyInput,
   xpInput,
+  createBackup,
+  onCreateBackupChange,
   onReload,
 }: {
   profiles: ProfileInfo[];
@@ -53,6 +55,8 @@ export function ProWorkbenchPanel({
   readOnly: boolean;
   moneyInput: string;
   xpInput: string;
+  createBackup: boolean;
+  onCreateBackupChange: (checked: boolean) => void;
   onReload: () => void;
 }) {
   const language = useSettingsStore((state) => state.language);
@@ -96,20 +100,31 @@ export function ProWorkbenchPanel({
             gameSiiPath: selectedSave.game_sii_path,
             money,
             xp,
+            createBackup,
           });
         } else {
           const action = actions.find((item) => item.id === actionId);
-          if (action?.command)
-            await invoke<EditResult>(action.command, { gameSiiPath: selectedSave.game_sii_path });
+          if (action?.command) {
+            await invoke<EditResult>(action.command, {
+              gameSiiPath: selectedSave.game_sii_path,
+              createBackup,
+            });
+          }
         }
       }
-      toast.success("Action plan completed. Each changed operation created its own backup.");
+      toast.success(
+        createBackup
+          ? "Action plan completed. Changed operations were backed up."
+          : "Action plan completed without creating backups.",
+      );
       setReviewOpen(false);
       setSelectedActions([]);
       onReload();
     } catch (error) {
       toast.error(
-        `Action plan stopped: ${String(error)}. Earlier completed steps may already be saved and backed up.`,
+        createBackup
+          ? `Action plan stopped: ${String(error)}. Earlier completed steps may already be saved and backed up.`
+          : `Action plan stopped: ${String(error)}. Earlier completed steps may already be saved.`,
       );
       setReviewOpen(false);
       onReload();
@@ -357,8 +372,12 @@ export function ProWorkbenchPanel({
         )}
         <div className="flex items-center justify-between gap-3">
           <p className="text-[11px] text-muted-foreground">
-            {t("Each operation creates a backup before writing.")}{" "}
-            {t("If a step fails, earlier completed steps remain saved and backed up.")}
+            {t(
+              createBackup
+                ? "Each operation creates a backup before writing."
+                : "No backup will be created before these changes.",
+            )}{" "}
+            {t("If a step fails, earlier completed steps remain saved.")}
           </p>
           <Button
             disabled={!selectedSave || readOnly || selectedActions.length === 0 || running}
@@ -380,7 +399,11 @@ export function ProWorkbenchPanel({
               <h3 className="text-lg font-semibold">{t("Review action plan")}</h3>
               <p className="mt-1 text-sm text-muted-foreground">
                 {t("Target")}: {selectedSave?.save_name}.{" "}
-                {t("Each operation creates a backup before writing.")}
+                {t(
+                  createBackup
+                    ? "Each operation creates a backup before writing."
+                    : "No backup will be created before these changes.",
+                )}
               </p>
             </div>
             <ul className="space-y-2">
@@ -394,6 +417,14 @@ export function ProWorkbenchPanel({
                 );
               })}
             </ul>
+            <label className="flex cursor-pointer items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                checked={createBackup}
+                onChange={(event) => onCreateBackupChange(event.target.checked)}
+              />
+              {t("Create a backup before saving")}
+            </label>
             <div className="flex justify-end gap-2">
               <Button variant="outline" onClick={() => setReviewOpen(false)} disabled={running}>
                 {t("Back")}

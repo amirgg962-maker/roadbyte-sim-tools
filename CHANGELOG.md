@@ -1,5 +1,21 @@
 # Changelog
 
+## roadbyte-sim-tools@0.3.2 (2026-10-31)
+
+### Fixed
+
+- Save edits now write valid plaintext `SiiN` after loading compressed `ScsC` saves. A regression test changes money and XP together, saves the selected file, reloads it, and verifies both values.
+- Preserve the selected save's money and XP across the save/reload flow; keep optional timestamped backups for edits and quick actions.
+
+### Added
+
+- Add a game selector with separate ETS2 and early ATS profile/config discovery and custom paths. ATS save editing and game-version compatibility have not been validated against real ATS saves.
+- Add unit-scoped SII property helpers and tests for properties in separate units and braces inside quoted strings.
+
+### Notes
+
+- Keep `g_save_format` set to `2` if you want the game to continue writing text saves after it saves them in-game. Back up valuable profiles before testing edited saves.
+
 ## roadbyte-sim-tools@0.3.1 (2026-10-27)
 
 ### Highlights

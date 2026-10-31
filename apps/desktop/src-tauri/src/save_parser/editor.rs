@@ -1,7 +1,7 @@
 use crate::core::models::TruckInfo;
 use crate::core::profile::SaveFile;
 
-use crate::save_parser::compression::{compress_save, decompress_save};
+use crate::save_parser::compression::decompress_save;
 use crate::save_parser::error::SaveError;
 use crate::save_parser::sii::{SiiDocument, MAX_ARRAY_ITEMS};
 
@@ -188,6 +188,7 @@ SiiNunit
 #[allow(clippy::unwrap_used)]
 mod editor_tests {
     use super::*;
+    use crate::save_parser::compression::compress_save;
     use std::fs;
     use std::path::PathBuf;
 
@@ -235,7 +236,8 @@ mod editor_tests {
 
     #[test]
     fn test_edit_money() {
-        let (mut editor, _dir) = make_save_editor("SiiNunit\n{\n money_account: 100\n}\n");
+        let (mut editor, _dir) =
+            make_save_editor("SiiNunit\n{\n bank_data : bank.0 {\n  money_account: 100\n }\n}\n");
         editor.load().unwrap();
         editor.edit_money(999).unwrap();
         assert_eq!(editor.get_property("money_account").unwrap(), "999");
@@ -243,10 +245,13 @@ mod editor_tests {
 
     #[test]
     fn test_edit_xp() {
-        let (mut editor, _dir) = make_save_editor("SiiNunit\n{\n experience_points: 100\n}\n");
+        let (mut editor, _dir) = make_save_editor(
+            "SiiNunit\n{\n driver : driver.player {\n  experience_points: 100\n }\n}\n",
+        );
         editor.load().unwrap();
         editor.edit_xp(5000).unwrap();
-        assert_eq!(editor.get_property("experience_points").unwrap(), "5000");
+        let doc = editor.document.as_ref().unwrap();
+        assert_eq!(doc.get_property("experience_points"), Some("5000"));
     }
 
     #[test]
@@ -363,7 +368,8 @@ mod editor_tests {
 
     #[test]
     fn test_save_writes_to_file() {
-        let (mut editor, dir) = make_save_editor("SiiNunit\n{\n money_account: 100\n}\n");
+        let (mut editor, dir) =
+            make_save_editor("SiiNunit\n{\n bank : bank.0 {\n  money_account: 100\n }\n}\n");
         editor.load().unwrap();
         editor.edit_money(200).unwrap();
         editor.save().unwrap();
@@ -374,7 +380,8 @@ mod editor_tests {
 
     #[test]
     fn test_save_encrypted_plaintext_writes_plaintext() {
-        let (mut editor, dir) = make_save_editor("SiiNunit\n{\n money_account: 100\n}\n");
+        let (mut editor, dir) =
+            make_save_editor("SiiNunit\n{\n bank : bank.0 {\n  money_account: 100\n }\n}\n");
         editor.load().unwrap();
         editor.edit_money(200).unwrap();
         editor.save_encrypted().unwrap();
@@ -385,8 +392,8 @@ mod editor_tests {
     }
 
     #[test]
-    fn test_save_preserves_compressed_scsc_format() {
-        let content = "SiiNunit\n{\n money_account: 100\n}\n";
+    fn test_save_converts_compressed_scsc_to_plaintext_siin() {
+        let content = "SiiNunit\n{\n bank : bank.0 {\n  money_account: 100\n }\n}\n";
         let (mut editor, dir) = make_save_editor(content);
         let game_sii = dir.path().join("save/save/game.sii");
         fs::write(&game_sii, compress_save(content).unwrap()).unwrap();
@@ -396,15 +403,38 @@ mod editor_tests {
         editor.save().unwrap();
 
         let saved = fs::read(&game_sii).unwrap();
-        assert!(saved.starts_with(b"ScsC"));
-        let decoded = decompress_save(&saved).unwrap();
-        assert!(decoded.contains("money_account: 200"));
+        assert!(saved.starts_with(b"SiiN"));
+        let saved_text = String::from_utf8(saved).unwrap();
+        assert!(saved_text.contains("money_account: 200"));
+    }
+
+    #[test]
+    fn money_and_xp_edits_persist_and_reload_from_compressed_save() {
+        let content = "SiiNunit\n{\n bank_data : bank.0 {\n  money_account: 100\n }\n driver : driver.player {\n  experience_points: 250\n }\n}\n";
+        let (mut editor, directory) = make_save_editor(content);
+        let selected_save_path = directory.path().join("save/save/game.sii");
+        fs::write(&selected_save_path, compress_save(content).unwrap()).unwrap();
+
+        editor.load().unwrap();
+        assert!(editor.edit_money(900_000).unwrap());
+        assert!(editor.edit_xp(42_000).unwrap());
+        editor.save().unwrap();
+
+        let saved_bytes = fs::read(&selected_save_path).unwrap();
+        assert!(saved_bytes.starts_with(b"SiiN"));
+        let saved_text = decompress_save(&saved_bytes).unwrap();
+        let mut reloaded = SaveEditor::new(editor.save_file.clone());
+        reloaded.load().unwrap();
+        assert_eq!(reloaded.get_property("money_account"), Some("900000"));
+        assert_eq!(reloaded.get_property("experience_points"), Some("42000"));
+        assert!(saved_text.contains("money_account: 900000"));
+        assert!(saved_text.contains("experience_points: 42000"));
     }
 
     #[test]
     fn test_full_workflow() {
         let (mut editor, _dir) = make_save_editor(
-            "SiiNunit\n{\n money_account: 100\n experience_points: 0\n adr: 0\n fuel_relative: 0.0\n engine_wear: &3f800000\n}\n",
+            "SiiNunit\n{\n bank : bank.0 {\n  money_account: 100\n }\n driver_player : driver.0 {\n  experience_points: 0\n  adr: 0\n }\n vehicle : vehicle.0 {\n  fuel_relative: 0.0\n  engine_wear: &3f800000\n }\n}\n",
         );
         editor.load().unwrap();
 
@@ -419,6 +449,51 @@ mod editor_tests {
         assert_eq!(editor.get_property("adr").unwrap(), "63");
         assert_eq!(editor.get_property("fuel_relative").unwrap(), "1.0");
         assert_eq!(editor.get_property("engine_wear").unwrap(), "0");
+    }
+
+    #[test]
+    fn quick_actions_persist_and_reload_from_compressed_save() {
+        let content = "SiiNunit\n{\n cities: 2\n cities[0]: \"berlin\"\n cities[1]: \"paris\"\n visited_cities: 1\n visited_cities[0]: \"berlin\"\n visited_cities_count: 1\n visited_cities_count[0]: \"1\"\n adr: 0\n long_dist: 0\n heavy: 0\n fragile: 0\n urgent: 0\n mechanical: 0\n engine_wear: &3f800000\n transmission_wear: &3f800000\n cabin_wear: &3f800000\n chassis_wear: &3f800000\n engine_wear_unfixable: &3f800000\n transmission_wear_unfixable: &3f800000\n cabin_wear_unfixable: &3f800000\n chassis_wear_unfixable: &3f800000\n fuel_relative: &3f000000\n}\n";
+        let (mut editor, directory) = make_save_editor(content);
+        let save_path = directory.path().join("save/save/game.sii");
+        fs::write(&save_path, compress_save(content).unwrap()).unwrap();
+
+        editor.load().unwrap();
+        assert_eq!(editor.unlock_all_cities().unwrap(), 1);
+        assert_eq!(editor.max_skills().unwrap().len(), 6);
+        assert_eq!(editor.repair_all().unwrap().len(), 8);
+        assert_eq!(editor.refuel_all().unwrap().len(), 1);
+        editor.save().unwrap();
+
+        let saved = fs::read(&save_path).unwrap();
+        assert!(saved.starts_with(b"SiiN"));
+        editor.load().unwrap();
+        let document = editor.document().unwrap();
+        let visited = document.get_array_property("visited_cities").unwrap();
+        assert_eq!(visited.len(), 2);
+        for property in [
+            "adr",
+            "long_dist",
+            "heavy",
+            "fragile",
+            "urgent",
+            "mechanical",
+        ] {
+            assert!(matches!(document.get_property(property), Some("63" | "6")));
+        }
+        for property in [
+            "engine_wear",
+            "transmission_wear",
+            "cabin_wear",
+            "chassis_wear",
+            "engine_wear_unfixable",
+            "transmission_wear_unfixable",
+            "cabin_wear_unfixable",
+            "chassis_wear_unfixable",
+        ] {
+            assert_eq!(document.get_property(property), Some("0"));
+        }
+        assert_eq!(document.get_property("fuel_relative"), Some("1.0"));
     }
 }
 
@@ -470,7 +545,6 @@ fn extract_section<'a>(content: &'a str, section_name: &str) -> Option<&'a str> 
 pub struct SaveEditor {
     save_file: SaveFile,
     document: Option<SiiDocument>,
-    was_compressed: bool,
 }
 
 impl SaveEditor {
@@ -478,13 +552,11 @@ impl SaveEditor {
         Self {
             save_file,
             document: None,
-            was_compressed: false,
         }
     }
 
     pub fn load(&mut self) -> Result<(), SaveError> {
         let data = crate::save_parser::compression::read_save_file(&self.save_file.game_sii_path)?;
-        self.was_compressed = data.len() >= 4 && &data[..4] == b"ScsC";
         let content = decompress_save(&data)?;
         self.document = Some(SiiDocument::new(content));
         Ok(())
@@ -512,6 +584,8 @@ impl SaveEditor {
     }
 
     pub fn edit_xp(&mut self, xp: i64) -> Result<bool, SaveError> {
+        // Match ETS Vibes' property-based handling. Save versions can encode
+        // the player driver under different unit type names.
         self.document_mut()?
             .set_property("experience_points", &xp.to_string())
     }
@@ -631,12 +705,10 @@ impl SaveEditor {
 
     pub fn save(&mut self) -> Result<(), SaveError> {
         let content = self.document()?.content().to_string();
-        let data = if self.was_compressed {
-            compress_save(&content)?
-        } else {
-            content.into_bytes()
-        };
-        crate::core::atomic_file::write_atomic(&self.save_file.game_sii_path, &data)?;
+        // ETS Vibes writes edited saves as plaintext SiiN. This avoids relying
+        // on our ScsC encoder when updating a game save; ETS2 accepts plaintext
+        // saves, and users editing saves should keep g_save_format set to 2.
+        crate::core::atomic_file::write_atomic(&self.save_file.game_sii_path, content.as_bytes())?;
         Ok(())
     }
 

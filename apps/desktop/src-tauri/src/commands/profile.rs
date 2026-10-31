@@ -1,5 +1,6 @@
 use std::path::PathBuf;
 
+use crate::core::detection::{game_by_id, GameType};
 use crate::core::profile::{Profile, ProfileDetector, SaveFile};
 
 use super::{helpers::read_profile_sii, ProfileInfo, SaveInfo};
@@ -13,6 +14,7 @@ impl TryFrom<Profile> for ProfileInfo {
         Ok(Self {
             path: p.path.to_string_lossy().to_string(),
             name: p.name,
+            game_id: p.game_type.id().to_string(),
             display_name,
             active_mods,
             cached_experience,
@@ -33,8 +35,13 @@ impl From<SaveFile> for SaveInfo {
 }
 
 #[tauri::command]
-pub fn list_profiles(custom_path: Option<String>) -> Result<Vec<ProfileInfo>, String> {
-    let mut detector = ProfileDetector::new();
+pub fn list_profiles(
+    game_id: Option<String>,
+    custom_path: Option<String>,
+) -> Result<Vec<ProfileInfo>, String> {
+    let game_id = game_id.as_deref().unwrap_or("ets2");
+    let game = game_by_id(game_id).ok_or_else(|| format!("Unsupported game id: {game_id}"))?;
+    let mut detector = ProfileDetector::for_game(game);
     if let Some(path_str) = custom_path {
         let trimmed = path_str.trim();
         if !trimmed.is_empty() {
@@ -50,6 +57,7 @@ pub fn get_saves(profile_path: String) -> Result<Vec<SaveInfo>, String> {
     let profile = Profile {
         path: PathBuf::from(&profile_path),
         name: String::new(),
+        game_type: GameType::Ets2,
     };
     let detector = ProfileDetector::new();
     let saves = detector.get_saves(&profile)?;

@@ -10,17 +10,69 @@ use crate::save_parser::{
 
 use super::helpers::{calc_level, read_info_sii, save_file_from_game_sii};
 use super::{EditResult, SaveData};
+use crate::core::detection::GameType;
+
+fn maybe_create_backup(
+    path: &Path,
+    create_backup: Option<bool>,
+) -> Result<Option<std::path::PathBuf>, String> {
+    if create_backup.unwrap_or(true) {
+        backup_file(path)
+            .map(Some)
+            .map_err(|error| error.to_string())
+    } else {
+        Ok(None)
+    }
+}
+
+#[cfg(test)]
+#[allow(clippy::unwrap_used)]
+mod backup_option_tests {
+    use super::maybe_create_backup;
+    use std::fs;
+
+    #[test]
+    fn disabled_backup_does_not_create_backup_files() {
+        let directory = tempfile::tempdir().unwrap();
+        let save_path = directory.path().join("game.sii");
+        fs::write(&save_path, b"save").unwrap();
+
+        assert!(maybe_create_backup(&save_path, Some(false))
+            .unwrap()
+            .is_none());
+        assert_eq!(fs::read_dir(directory.path()).unwrap().count(), 1);
+        assert_eq!(fs::read(&save_path).unwrap(), b"save");
+    }
+
+    #[test]
+    fn omitted_backup_option_keeps_safe_default() {
+        let directory = tempfile::tempdir().unwrap();
+        let save_path = directory.path().join("game.sii");
+        fs::write(&save_path, b"save").unwrap();
+
+        let backup = maybe_create_backup(&save_path, None).unwrap().unwrap();
+        assert_eq!(fs::read(backup).unwrap(), b"save");
+    }
+}
 
 #[tauri::command]
-pub fn load_save(game_sii_path: String) -> Result<SaveData, String> {
+pub fn load_save(game_id: Option<String>, game_sii_path: String) -> Result<SaveData, String> {
+    let game_id = game_id.as_deref().unwrap_or("ets2");
+    let game_type =
+        GameType::from_id(game_id).ok_or_else(|| format!("Unsupported game id: {game_id}"))?;
     let data = read_save_file(Path::new(&game_sii_path)).map_err(|e| e.to_string())?;
     let was_compressed = data.len() >= 4 && &data[..4] == b"ScsC";
     let content = decompress_save(&data).map_err(|e| e.to_string())?;
 
     let doc = SiiDocument::new(content);
 
-    let money_account = doc.get_property("money_account").map(|s| s.to_string());
-    let experience_points = doc.get_property("experience_points").map(|s| s.to_string());
+    // Match ETS Vibes: save layouts vary, so locate account fields by property
+    // name rather than requiring a specific unit header.
+    let money_account = doc.get_property("money_account").map(str::to_string);
+    // ETS Vibes reads the player XP by property name because real save layouts
+    // use different unit headers across versions. Keep that compatibility:
+    // restricting this to `driver_player` made XP disappear on valid saves.
+    let experience_points = doc.get_property("experience_points").map(str::to_string);
 
     let money = money_account.as_ref().and_then(|s| s.parse::<i64>().ok());
     let xp = experience_points
@@ -81,7 +133,7 @@ pub fn load_save(game_sii_path: String) -> Result<SaveData, String> {
     }
 
     let (game_version, compatibility_warning) =
-        super::helpers::read_game_version(custom_config_path);
+        super::helpers::read_game_version_for_game(custom_config_path, game_type);
 
     Ok(SaveData {
         money,
@@ -114,6 +166,7 @@ pub fn edit_save(
     game_sii_path: String,
     money: Option<i64>,
     xp: Option<i64>,
+    create_backup: Option<bool>,
     state: tauri::State<'_, super::read_only::ReadOnlyState>,
 ) -> Result<EditResult, String> {
     state.ensure_writable()?;
@@ -140,13 +193,19 @@ pub fn edit_save(
     let backup = if changes.is_empty() {
         None
     } else {
-        let bp = backup_file(file_path).map_err(|e| e.to_string())?;
+        let bp = maybe_create_backup(file_path, create_backup)?;
         editor.save().map_err(|e| e.to_string())?;
-        Some(bp.to_string_lossy().to_string())
+        bp.map(|path| path.to_string_lossy().to_string())
     };
 
     let message = backup.as_ref().map_or_else(
-        || "No changes made.".into(),
+        || {
+            if changes.is_empty() {
+                "No changes made.".into()
+            } else {
+                "Saved.".into()
+            }
+        },
         |b| format!("Saved (backup: {})", b),
     );
 
@@ -156,6 +215,7 @@ pub fn edit_save(
 #[tauri::command]
 pub fn max_skills(
     game_sii_path: String,
+    create_backup: Option<bool>,
     state: tauri::State<'_, super::read_only::ReadOnlyState>,
 ) -> Result<EditResult, String> {
     state.ensure_writable()?;
@@ -169,12 +229,13 @@ pub fn max_skills(
     let (message, backup) = if changes.is_empty() {
         ("Skills already maxed.".into(), None)
     } else {
-        let bp = backup_file(file_path).map_err(|e| e.to_string())?;
+        let bp = maybe_create_backup(file_path, create_backup)?;
         editor.save().map_err(|e| e.to_string())?;
-        (
-            format!("Skills maxed (backup: {})", bp.display()),
-            Some(bp.to_string_lossy().to_string()),
-        )
+        let message = bp.as_ref().map_or_else(
+            || "Skills maxed.".into(),
+            |path| format!("Skills maxed (backup: {})", path.display()),
+        );
+        (message, bp.map(|path| path.to_string_lossy().to_string()))
     };
 
     Ok(EditResult { message, backup })
@@ -183,6 +244,7 @@ pub fn max_skills(
 #[tauri::command]
 pub fn repair_all(
     game_sii_path: String,
+    create_backup: Option<bool>,
     state: tauri::State<'_, super::read_only::ReadOnlyState>,
 ) -> Result<EditResult, String> {
     state.ensure_writable()?;
@@ -196,16 +258,19 @@ pub fn repair_all(
     let (message, backup) = if changes.is_empty() {
         ("Everything already repaired.".into(), None)
     } else {
-        let bp = backup_file(file_path).map_err(|e| e.to_string())?;
+        let bp = maybe_create_backup(file_path, create_backup)?;
         editor.save().map_err(|e| e.to_string())?;
-        (
-            format!(
-                "Repaired: {} (backup: {})",
-                changes.join(", "),
-                bp.display()
-            ),
-            Some(bp.to_string_lossy().to_string()),
-        )
+        let message = bp.as_ref().map_or_else(
+            || format!("Repaired: {}", changes.join(", ")),
+            |path| {
+                format!(
+                    "Repaired: {} (backup: {})",
+                    changes.join(", "),
+                    path.display()
+                )
+            },
+        );
+        (message, bp.map(|path| path.to_string_lossy().to_string()))
     };
 
     Ok(EditResult { message, backup })
@@ -214,6 +279,7 @@ pub fn repair_all(
 #[tauri::command]
 pub fn refuel_all(
     game_sii_path: String,
+    create_backup: Option<bool>,
     state: tauri::State<'_, super::read_only::ReadOnlyState>,
 ) -> Result<EditResult, String> {
     state.ensure_writable()?;
@@ -227,12 +293,13 @@ pub fn refuel_all(
     let (message, backup) = if changes.is_empty() {
         ("Everything already refueled.".into(), None)
     } else {
-        let bp = backup_file(file_path).map_err(|e| e.to_string())?;
+        let bp = maybe_create_backup(file_path, create_backup)?;
         editor.save().map_err(|e| e.to_string())?;
-        (
-            format!("Refueled (backup: {})", bp.display()),
-            Some(bp.to_string_lossy().to_string()),
-        )
+        let message = bp.as_ref().map_or_else(
+            || "Refueled.".into(),
+            |path| format!("Refueled (backup: {})", path.display()),
+        );
+        (message, bp.map(|path| path.to_string_lossy().to_string()))
     };
 
     Ok(EditResult { message, backup })
@@ -241,6 +308,7 @@ pub fn refuel_all(
 #[tauri::command]
 pub fn unlock_cities(
     game_sii_path: String,
+    create_backup: Option<bool>,
     state: tauri::State<'_, super::read_only::ReadOnlyState>,
 ) -> Result<EditResult, String> {
     state.ensure_writable()?;
@@ -252,12 +320,13 @@ pub fn unlock_cities(
     let count = editor.unlock_all_cities().map_err(|e| e.to_string())?;
 
     let (message, backup) = if count > 0 {
-        let bp = backup_file(file_path).map_err(|e| e.to_string())?;
+        let bp = maybe_create_backup(file_path, create_backup)?;
         editor.save().map_err(|e| e.to_string())?;
-        (
-            format!("Unlocked {} cities (backup: {})", count, bp.display()),
-            Some(bp.to_string_lossy().to_string()),
-        )
+        let message = bp.as_ref().map_or_else(
+            || format!("Unlocked {} cities.", count),
+            |path| format!("Unlocked {} cities (backup: {})", count, path.display()),
+        );
+        (message, bp.map(|path| path.to_string_lossy().to_string()))
     } else {
         ("No new cities to unlock.".into(), None)
     };

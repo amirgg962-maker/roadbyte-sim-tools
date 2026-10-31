@@ -23,7 +23,7 @@ import { FirstRunGuide } from "./components/settings/FirstRunGuide";
 import { useSettingsStore } from "./stores/settings";
 import { useSaveEditorStore } from "./stores/save-editor";
 import type { WorkspaceTab } from "./stores/save-editor";
-import type { ProfileInfo, SaveInfo } from "./types";
+import type { GameId, ProfileInfo, SaveInfo } from "./types";
 import { isSteamSynced } from "./utils/steam";
 
 const SaveEditorPage = lazy(() =>
@@ -53,7 +53,8 @@ interface AppVersionInfo {
 function App() {
   const {
     readOnly,
-    customGamePath,
+    customGamePath: customEts2Path,
+    customAtsPath,
     setIsSettingsOpen,
     language,
     hasCompletedOnboarding,
@@ -65,15 +66,21 @@ function App() {
     selectedProfile,
     selectedSave,
     activeWorkspace,
+    activeGame,
     selectedConfigPath,
     setProfiles,
     setSaves,
     setSelectedProfile,
     setSelectedSave,
     setSaveData,
+    setMoneyInput,
+    setXpInput,
     setActiveWorkspace,
+    setActiveGame,
     setSelectedConfigPath,
   } = useSaveEditorStore();
+
+  const customGamePath = activeGame === "ats" ? customAtsPath : customEts2Path;
 
   const [status, setStatus] = useState("");
   const [appInfo, setAppInfo] = useState<AppVersionInfo | null>(null);
@@ -137,6 +144,37 @@ function App() {
     [activeWorkspace, requestConfigNavigation, setActiveWorkspace],
   );
 
+  const onSelectGame = useCallback(
+    (game: GameId) => {
+      if (game === activeGame) return;
+      requestConfigNavigation(() => {
+        setActiveGame(game);
+        setProfiles([]);
+        setSelectedProfile(null);
+        setSelectedSave(null);
+        setSaveData(null);
+        setMoneyInput("");
+        setXpInput("");
+        setSaves([]);
+        setConfigPaths([]);
+        setSelectedConfigPath(null);
+      });
+    },
+    [
+      activeGame,
+      requestConfigNavigation,
+      setActiveGame,
+      setSelectedProfile,
+      setSelectedSave,
+      setSaveData,
+      setMoneyInput,
+      setProfiles,
+      setSaves,
+      setSelectedConfigPath,
+      setXpInput,
+    ],
+  );
+
   const discardAndContinueNavigation = useCallback(() => {
     const nextAction = pendingConfigNavigationRef.current;
     pendingConfigNavigationRef.current = null;
@@ -189,6 +227,7 @@ function App() {
     const selectedConfigDirectory = selectedConfigPath?.replace(/[\\/][^\\/]+$/, "");
     invoke<AppVersionInfo>("get_app_info", {
       customPath: selectedConfigDirectory || customGamePath || null,
+      gameId: activeGame,
     })
       .then((info) => {
         if (active) setAppInfo({ ...info, config_path: selectedConfigPath ?? null });
@@ -197,23 +236,20 @@ function App() {
     return () => {
       active = false;
     };
-  }, [customGamePath, selectedConfigPath]);
+  }, [activeGame, customGamePath, selectedConfigPath]);
 
   // List configs
   useEffect(() => {
-    invoke<string[]>("list_configs", { customPath: customGamePath || null })
+    invoke<string[]>("list_configs", { gameId: activeGame, customPath: customGamePath || null })
       .then((paths) => {
         setConfigPaths(paths);
         const storeSelected = useSaveEditorStore.getState().selectedConfigPath;
-        if (paths.length > 0 && !storeSelected) {
-          const first = paths[0];
-          if (first != null) {
-            setSelectedConfigPath(first);
-          }
+        if (!storeSelected || !paths.includes(storeSelected)) {
+          setSelectedConfigPath(paths[0] ?? null);
         }
       })
       .catch(() => {});
-  }, [customGamePath, setSelectedConfigPath]);
+  }, [activeGame, customGamePath, setSelectedConfigPath]);
 
   // Load profiles & fetch saves for active profile (NO auto-select save)
   const loadProfiles = useCallback(
@@ -223,6 +259,7 @@ function App() {
       setStatus("Loading profiles...");
       try {
         const fetchedProfiles = await invoke<ProfileInfo[]>("list_profiles", {
+          gameId: activeGame,
           customPath: customGamePath || null,
         });
         if (requestId !== savesRequestIdRef.current) return;
@@ -266,7 +303,7 @@ function App() {
         setLoadingProfiles(false);
       }
     },
-    [customGamePath, setProfiles, setSelectedProfile, setSaves, setSelectedSave, setSaveData],
+    [activeGame, customGamePath, setProfiles, setSelectedProfile, setSaves, setSelectedSave, setSaveData],
   );
 
   useEffect(() => {
@@ -368,6 +405,8 @@ function App() {
       sidebar={
         <SidebarNav
           appInfo={appInfo}
+          activeGame={activeGame}
+          onSelectGame={onSelectGame}
           profiles={profiles}
           saves={saves}
           selectedProfile={selectedProfile}

@@ -1,3 +1,4 @@
+use serde::Serialize;
 use std::path::PathBuf;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -7,10 +8,28 @@ pub enum Platform {
     MacOS,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "snake_case")]
 pub enum GameType {
     Ets2,
     Ats,
+}
+
+impl GameType {
+    pub fn id(self) -> &'static str {
+        match self {
+            Self::Ets2 => "ets2",
+            Self::Ats => "ats",
+        }
+    }
+
+    pub fn from_id(id: &str) -> Option<Self> {
+        match id {
+            "ets2" => Some(Self::Ets2),
+            "ats" => Some(Self::Ats),
+            _ => None,
+        }
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -158,7 +177,33 @@ pub fn all_games() -> &'static [GameConfig] {
     SUPPORTED_GAMES
 }
 
+pub fn game_by_id(id: &str) -> Option<&'static GameConfig> {
+    let game_type = GameType::from_id(id)?;
+    SUPPORTED_GAMES
+        .iter()
+        .find(|game| game.game_type == game_type)
+}
+
 pub fn find_config_files(custom_path: Option<&std::path::Path>) -> Vec<PathBuf> {
+    find_config_files_for_games(custom_path, SUPPORTED_GAMES.iter())
+}
+
+pub fn find_config_files_for_game(
+    custom_path: Option<&std::path::Path>,
+    game_type: GameType,
+) -> Vec<PathBuf> {
+    find_config_files_for_games(
+        custom_path,
+        SUPPORTED_GAMES
+            .iter()
+            .filter(move |game| game.game_type == game_type),
+    )
+}
+
+fn find_config_files_for_games<'a>(
+    custom_path: Option<&std::path::Path>,
+    games: impl Iterator<Item = &'a GameConfig>,
+) -> Vec<PathBuf> {
     let platform = get_current_platform();
     let mut configs = Vec::new();
     let mut seen = std::collections::HashSet::new();
@@ -178,7 +223,7 @@ pub fn find_config_files(custom_path: Option<&std::path::Path>) -> Vec<PathBuf> 
         }
     }
 
-    for game in SUPPORTED_GAMES {
+    for game in games {
         for path in game.get_paths(platform) {
             let config = path.join("config.cfg");
             if config.exists() && seen.insert(config.clone()) {
